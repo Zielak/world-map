@@ -1,4 +1,4 @@
-import { seeds } from "../seeds"
+import { seeds } from '../seeds'
 
 function ridgeNoise(nx, ny) {
   return 2 * (0.5 - Math.abs(0.5 - seeds[0].noise2D(nx, ny)))
@@ -13,7 +13,7 @@ export const baseLayer: TerrainLayer = [
   // baseRidged */
   (x, y) => {
     const amplitude = seeds[0].noise2D(y / 3000, x / 3000) / 2 + 0.5
-    const scale = 2000
+    const scale = 3000
 
     const e0 = 1 * ridgeNoise((1 * x) / scale, (1 * y) / scale)
     const e1 = 0.5 * ridgeNoise((2 * x) / scale, (2 * y) / scale) * e0

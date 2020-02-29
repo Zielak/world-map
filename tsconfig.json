@@ -1,0 +1,14 @@
+{
+  "references": [
+    {
+      "path": "./src/game"
+    },
+    {
+      "path": "./src/terrainGeneration"
+    },
+    {
+      "path": "./src/utils"
+    }
+  ],
+  "files": []
+}

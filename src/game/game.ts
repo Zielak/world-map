@@ -1,19 +1,46 @@
-import { Viewport } from './game/viewport'
+import { Renderer } from './renderer'
 import { TerrainController } from './terrain/terrainController'
+import { parseOSMXml } from './mapParser/osmXmlParser'
+import { MapController } from './map/mapController'
 
-const viewport = new Viewport()
+const renderer = new Renderer()
+
 const terrainController = new TerrainController(
   {
     sectorSizeX: 200,
     sectorSizeY: 200,
     LODDistanceModifiers: [2, 3, 5, 40],
-    initialPlayerPos: viewport.webVRCamera.position
+    initialPlayerPos: renderer.camera.position
   },
-  viewport.scene
+  renderer.scene
 )
+const mapController = new MapController({}, renderer)
 
-window['viewport'] = viewport
+window['viewport'] = renderer
 window['terrain'] = terrainController
+
+fetch('map.osm')
+  .then(data => data.text())
+  .then(string => {
+    const mapData = parseOSMXml(string)
+
+    mapController.geoConv.setReference(
+      mapData.bounds.centerLat,
+      mapData.bounds.centerLon,
+      0
+    )
+
+    renderer.addNode('test', 0, 0, 0)
+
+    // Render every node from every way
+    mapData.waysMap.forEach(way => {
+      // const material = 'node'
+      // way.nodes.forEach(node => {})
+      mapController.addWay(way)
+    })
+
+    window['map'] = mapData
+  })
 
 /*
 ;(function() {

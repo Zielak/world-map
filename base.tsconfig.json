@@ -3,14 +3,11 @@
     "composite": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
-    "lib": [
-      "dom",
-      "webworker"
-    ],
     "moduleResolution": "node",
     "sourceMap": true,
-    "jsx": "react",
-    "target": "es6",
-    "outDir": "../dist"
-  }
+    "target": "es2016"
+  },
+  "exclude": [
+    "node_modules"
+  ]
 }

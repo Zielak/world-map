@@ -11,12 +11,15 @@ export const Gui: FunctionComponent<GuiProps> = props => {
   const [currentSectorY, setCurrentSectorY] = useState(0)
 
   useEffect(() => {
-    document.addEventListener(EVENTS.updateCurrentSector, event => {
-      const data: EUpdateCurrentSector = event.detail
-      setSectors(data.minimap)
-      setCurrentSectorX(data.currentX)
-      setCurrentSectorY(data.currentY)
-    })
+    document.addEventListener(
+      EVENTS.updateCurrentSector,
+      (event: CustomEvent) => {
+        const data: EUpdateCurrentSector = event.detail
+        setSectors(data.minimap)
+        setCurrentSectorX(data.currentX)
+        setCurrentSectorY(data.currentY)
+      }
+    )
   }, [])
 
   return (

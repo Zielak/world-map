@@ -1,0 +1,19 @@
+{
+  "extends": "../../base.tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react",
+    "lib": [
+      "DOM",
+      "ES7"
+    ],
+    "types": [
+      "../types"
+    ],
+    "outDir": "../../dist"
+  },
+  "references": [
+    {
+      "path": "../utils"
+    }
+  ]
+}

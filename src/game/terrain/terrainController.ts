@@ -1,9 +1,9 @@
-import { Mesh, Vector3, Vector2, Scene, MeshBuilder } from "@babylonjs/core"
-import { TerrainSector } from "./sector"
-import { SectorsMap } from "./sectorsMap"
-import { getStepping } from "../utils/mesh"
-import { LoadBalancer } from "./loadBalancer"
-import { wrap } from "../utils/numbers"
+import { Mesh, Vector3, Vector2, Scene, MeshBuilder } from '@babylonjs/core'
+import { TerrainSector } from './sector'
+import { SectorsMap } from './sectorsMap'
+import { getStepping } from '../../utils/mesh'
+import { LoadBalancer } from './loadBalancer'
+import { wrap } from '../../utils/numbers'
 
 class TerrainController {
   lastPlayerPosition: Vector3
@@ -31,19 +31,19 @@ class TerrainController {
     )
     this.terrainWorkers = new LoadBalancer(
       [
-        new Worker("./terrain.worker.js"),
-        new Worker("./terrain.worker.js"),
-        new Worker("./terrain.worker.js"),
-        new Worker("./terrain.worker.js"),
-        new Worker("./terrain.worker.js"),
-        new Worker("./terrain.worker.js")
+        new Worker('./terrain.worker.js'),
+        new Worker('./terrain.worker.js'),
+        new Worker('./terrain.worker.js'),
+        new Worker('./terrain.worker.js'),
+        new Worker('./terrain.worker.js'),
+        new Worker('./terrain.worker.js')
       ],
       e => this.handleWorkerMessage(e)
     )
     this.terrainWorkers.postMessageAll({
-      type: "init",
-      seed1: "" + Math.random(),
-      seed2: "" + Math.random()
+      type: 'init',
+      seed1: '' + Math.random(),
+      seed2: '' + Math.random()
     })
 
     this.lastPlayerPosition = initialPlayerPos
@@ -64,7 +64,7 @@ class TerrainController {
     console.debug(` <= requesting new sector [${sectorX},${sectorY}_${LOD}]`)
 
     this.terrainWorkers.postMessage({
-      type: "generateTerrain",
+      type: 'generateTerrain',
       sizeX: this.sectorsMap.sizeX,
       sizeY: this.sectorsMap.sizeY,
       sectorX: parseInt(sectorX),
@@ -140,7 +140,7 @@ class TerrainController {
     )
     mesh.position.x = sectorX * this.sectorsMap.sizeX
     mesh.position.z = sectorY * this.sectorsMap.sizeY
-    mesh.setMaterialByID("grid" + LOD)
+    mesh.setMaterialByID('terrain' + LOD)
 
     const sector = this.sectorsMap.getSector(sectorX, sectorY)
     if (!sector) {

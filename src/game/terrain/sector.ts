@@ -1,7 +1,7 @@
-import { Mesh } from "@babylonjs/core"
-import { getStepping } from "../utils/mesh"
-import { SectorsMap } from "./sectorsMap"
-import { memoize } from "../utils/memoize"
+import { Mesh } from '@babylonjs/core'
+import { getStepping } from '../../utils/mesh'
+import { SectorsMap } from './sectorsMap'
+import { memoize } from '../../utils/memoize'
 
 class TerrainSector {
   x: number
@@ -65,7 +65,7 @@ class TerrainSector {
     if (this.terrains.length === 0) return 0
 
     const vertexData = this.bestTerrainMesh.geometry
-      .getVertexBuffer("position")
+      .getVertexBuffer('position')
       .getData()
 
     const i = getStepping(this.currentBestLOD)

@@ -1,6 +1,9 @@
 const path = require('path')
 const webpack = require('webpack')
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
+  .BundleAnalyzerPlugin
 const CopyWebpackPlugin = require('copy-webpack-plugin')
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin')
 
 const getMode = env => {
   if (env.production) {
@@ -8,28 +11,32 @@ const getMode = env => {
   }
   return 'development'
 }
-const getEntries = env => {
-  const entry = {
-    main: './src/index.tsx',
-    'terrain.worker': './src/terrainGeneration/worker.ts'
-  }
-  return entry
-}
 const getPlugins = env => {
-  const plugins = []
+  const plugins = [
+    new BundleAnalyzerPlugin({
+      analyzerMode: 'static',
+      openAnalyzer: false
+    })
+    // new ForkTsCheckerWebpackPlugin()
+  ]
 
   if (!env.production) {
-    plugins.unshift(
-      new webpack.SourceMapDevToolPlugin({
-        filename: '[file].map',
-        append: '\n//# sourceMappingURL=[url]'
-      })
-    )
+    // plugins.unshift(
+    //   new webpack.SourceMapDevToolPlugin({
+    //     filename: '[file].map',
+    //     append: '\n//# sourceMappingURL=[url]'
+    //   })
+    // )
     plugins.push(
       new CopyWebpackPlugin([
         {
-          context: './src',
+          context: './src/game/',
           from: '*.html',
+          to: './'
+        },
+        {
+          context: './src/game/',
+          from: '*.osm',
           to: './'
         }
       ])
@@ -45,7 +52,10 @@ module.exports = env => {
   }
 
   const config = {
-    entry: getEntries(env),
+    entry: {
+      main: './src/game/index.tsx',
+      'terrain.worker': './src/terrainGeneration/worker.ts'
+    },
     output: {
       filename: '[name].js',
       path: path.join(__dirname, 'dist')
@@ -53,19 +63,20 @@ module.exports = env => {
     devServer: {
       contentBase: path.join(__dirname, 'dist')
     },
+    devtool: 'cheap-module-source-map',
     mode: getMode(env),
     module: {
       rules: [
         {
           test: /\.tsx?$/,
+          include: path.join(__dirname, 'src'),
           use: {
             loader: 'ts-loader',
             options: {
-              configFile: path.resolve(__dirname, 'src/tsconfig.json'),
+              transpileOnly: true,
               projectReferences: true
             }
-          },
-          exclude: /node_modules/
+          }
         },
         {
           test: /\.html$/,
