@@ -7,6 +7,7 @@ Currently based on single, small extract from OSM.
 ---
 
 ```
+yarn
 yarn start
 ```
 

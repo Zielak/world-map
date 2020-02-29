@@ -1,7 +1,6 @@
 {
-  "name": "noise-test",
+  "name": "world-map",
   "version": "1.0.0",
-  "main": "src/index.html",
   "license": "MIT",
   "scripts": {
     "start": "webpack-dev-server --port 8090",
