@@ -1,4 +1,26 @@
-export const wrap = (val: number, max = 1) => ((val % max) + max) % max
+export const wrap = (val: number, max = 1): number => ((val % max) + max) % max
+
+export const middle = (valA: number, valB: number): number => {
+  const half = Math.abs(valA - valB) / 2
+
+  return valA > valB ? valB + half : valA + half
+}
+
+/**
+ * Is provided value between two given numbers?
+ * `a` and `b` don't have to be in order.
+ * @param value
+ * @param a
+ * @param b
+ */
+export const isWithin = (value: number, a: number, b: number): boolean => {
+  if (a < b) {
+    return a < value && value < b
+  } else if (a > b) {
+    return b < value && value < a
+  }
+  return value === a && value === b
+}
 
 export const rad2deg = (angle: number): number => {
   //  discuss at: http://locutus.io/php/rad2deg/

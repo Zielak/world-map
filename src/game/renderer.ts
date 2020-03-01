@@ -1,14 +1,23 @@
-import { WebVRFreeCamera, StandardMaterial, MeshBuilder } from '@babylonjs/core'
+import earcut from 'earcut'
+import {
+  StandardMaterial,
+  MeshBuilder,
+  PolygonMeshBuilder
+} from '@babylonjs/core'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Scene } from '@babylonjs/core/scene'
-import { Vector3, Color3 } from '@babylonjs/core/Maths/math'
+import { Vector3, Color3, Vector2 } from '@babylonjs/core/Maths/math'
 import { FreeCamera } from '@babylonjs/core/Cameras/freeCamera'
 import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight'
-
 import { GridMaterial } from '@babylonjs/materials/grid'
 
 // Required side effects to populate the Create methods on the mesh class. Without this, the bundle would be smaller but the createXXX methods from mesh would not be accessible.
 import '@babylonjs/core/Meshes/meshBuilder'
+
+import { MapNode } from './map/nodes'
+import { MapWay } from './map/ways'
+import { determineBuildingHeight } from './map/ways/buildingShape'
+import { buildingStillExists } from './map/ways/building'
 
 class Renderer {
   canvas: HTMLCanvasElement
@@ -82,16 +91,25 @@ class Renderer {
     const highway = new StandardMaterial('highway', scene)
     highway.diffuseColor = new Color3(0.301, 0.329, 0.353)
 
+    const building = new StandardMaterial('building', scene)
+    building.diffuseColor = new Color3(0.39, 0.39, 0.4)
+    building.backFaceCulling = false
+
     const amenity = new GridMaterial('amenity', scene)
     amenity.lineColor = new Color3(0.913, 0.118, 0.338)
   }
 
   private setupCameras() {
     // const { scene } = this
-    this.camera = new FreeCamera('camera1', new Vector3(75, 20, 75), this.scene)
-    this.camera.speed = 3
-    this.camera.setTarget(new Vector3(25, 16, 25))
-    this.camera.attachControl(this.canvas, true)
+    const camera = new FreeCamera(
+      'camera1',
+      new Vector3(75, 20, 75),
+      this.scene
+    )
+    this.camera = camera
+    camera.speed = 5
+    camera.setTarget(new Vector3(5, 1.8, 5))
+    camera.attachControl(this.canvas, true)
 
     // TODO: Focus on VR AFTER you get some OSM data rendering.
     // this.vrHelper = scene.createDefaultVRExperience({})
@@ -109,14 +127,31 @@ class Renderer {
   }
 
   addNode(nodeId, x, y, z) {
-    console.log('RENDERER:', `add node ${nodeId} at`, x, y, z)
+    // console.log('RENDERER:', `add node ${nodeId} at`, x, y, z)
     const nodeBox = MeshBuilder.CreateBox(
       `node_${nodeId}`,
       { size: 2 },
       this.scene
     )
     nodeBox.position.set(x, y, z)
-    nodeBox.setMaterialByID('node')
+    // nodeBox.setMaterialByID('node')
+  }
+
+  addPolygonWay(way: MapWay, points: Vector2[]) {
+    if (!buildingStillExists(way)) return
+
+    const polygonTriangulation = new PolygonMeshBuilder(
+      'way' + way.id,
+      points,
+      this.scene,
+      earcut
+    )
+    const height = determineBuildingHeight(way)
+    const polygon = polygonTriangulation.build(false, height)
+    polygon.setMaterialByID('building')
+    polygon.position.y = height
+
+    return polygon
   }
 }
 

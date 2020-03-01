@@ -1,6 +1,6 @@
 import { Mesh, Vector3, Vector2, Scene, MeshBuilder } from '@babylonjs/core'
-import { TerrainSector } from './sector'
-import { SectorsMap } from './sectorsMap'
+import { TerrainSector } from './terrainSector'
+import { SectorsMap } from './terrainSectorsMap'
 import { getStepping } from '../../utils/mesh'
 import { LoadBalancer } from './loadBalancer'
 import { wrap } from '../../utils/numbers'
@@ -31,9 +31,6 @@ class TerrainController {
     )
     this.terrainWorkers = new LoadBalancer(
       [
-        new Worker('./terrain.worker.js'),
-        new Worker('./terrain.worker.js'),
-        new Worker('./terrain.worker.js'),
         new Worker('./terrain.worker.js'),
         new Worker('./terrain.worker.js'),
         new Worker('./terrain.worker.js')
@@ -152,11 +149,11 @@ class TerrainController {
       // Update existing with new mesh data
       sector.setMeshLODAtDistance(LOD, mesh, LODDistances[LOD])
     }
-    console.debug(
-      ` => Got data [${sectorX},${sectorY}_${LOD}], ${
-        pointValues.length
-      } points, uneveneness: ${uneveneness.toFixed(4)}`
-    )
+    // console.debug(
+    //   ` => Got data [${sectorX},${sectorY}_${LOD}], ${
+    //     pointValues.length
+    //   } points, uneveneness: ${uneveneness.toFixed(4)}`
+    // )
   }
 
   /**

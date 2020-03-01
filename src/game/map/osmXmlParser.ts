@@ -1,6 +1,6 @@
 import { parse } from 'fast-xml-parser'
-import { parseNode } from './nodes'
-import { parseWay, filterWays } from './ways'
+import { parseNode, MapNodeList } from './nodes'
+import { parseWay, filterWays, MapWayList, MapWay } from './ways'
 import { parseBounds } from './bounds'
 
 export const parseOSMXml = (xml: string) => {

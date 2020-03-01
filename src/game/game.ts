@@ -1,27 +1,28 @@
 import { Renderer } from './renderer'
 import { TerrainController } from './terrain/terrainController'
-import { parseOSMXml } from './mapParser/osmXmlParser'
+import { parseOSMXml } from './map/osmXmlParser'
 import { MapController } from './map/mapController'
 
 const renderer = new Renderer()
 
-const terrainController = new TerrainController(
-  {
-    sectorSizeX: 200,
-    sectorSizeY: 200,
-    LODDistanceModifiers: [2, 3, 5, 40],
-    initialPlayerPos: renderer.camera.position
-  },
-  renderer.scene
-)
+// const terrainController = new TerrainController(
+//   {
+//     sectorSizeX: 200,
+//     sectorSizeY: 200,
+//     LODDistanceModifiers: [2, 3, 5, 40],
+//     initialPlayerPos: renderer.camera.position
+//   },
+//   renderer.scene
+// )
 const mapController = new MapController({}, renderer)
 
 window['viewport'] = renderer
-window['terrain'] = terrainController
+// window['terrain'] = terrainController
+window['map'] = mapController
 
-fetch('map.osm')
+fetch('bostonNorthEnd.osm')
   .then(data => data.text())
-  .then(string => {
+  .then(function onFetchMapData(string) {
     const mapData = parseOSMXml(string)
 
     mapController.geoConv.setReference(
@@ -33,13 +34,13 @@ fetch('map.osm')
     renderer.addNode('test', 0, 0, 0)
 
     // Render every node from every way
-    mapData.waysMap.forEach(way => {
+    mapData.waysMap.forEach(function addEachWay(way) {
       // const material = 'node'
       // way.nodes.forEach(node => {})
       mapController.addWay(way)
     })
 
-    window['map'] = mapData
+    window['mapRaw'] = mapData
   })
 
 /*

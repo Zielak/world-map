@@ -1,4 +1,30 @@
 import { simplifyTags } from './tags'
+import { MapWay } from './ways'
+
+export class MapNode {
+  wayRefs: Set<MapWay>
+  tags: MapTags
+
+  constructor(public id: number, public lat: number, public lon: number) {
+    this.wayRefs = new Set()
+  }
+
+  /**
+   * Node is used in some Way object
+   */
+  get inWay(): boolean {
+    return this.wayRefs.size == 0
+  }
+
+  /**
+   * Node has enough information to be used alone in rendering
+   */
+  get standalone(): boolean {
+    return typeof this.tags !== 'undefined' && Object.keys(this.tags).length > 0
+  }
+}
+
+export type MapNodeList = Map<number, MapNode>
 
 // Nodes with these tags are very important
 const tagsKeepers = {
@@ -42,12 +68,7 @@ const filterTags = (tag: OSMTag): boolean => {
 }
 
 export const parseNode = (node: OSMNode): MapNode => {
-  // Strip useless node attributes
-  const parsedNode: MapNode = {
-    id: node.$_id,
-    lat: node.$_lat,
-    lon: node.$_lon
-  }
+  const parsedNode = new MapNode(node.$_id, node.$_lat, node.$_lon)
 
   // Strip useless tags, if any
   if (node.tag) {

@@ -1,13 +1,47 @@
+import { MapBounds } from './bounds'
+import { MapNode, MapNodeList } from './nodes'
 import { simplifyTags } from './tags'
 
+export class MapWay {
+  tags: MapTags
+  bounds: MapBounds
+  renderedRef: any
+
+  constructor(public id: number, public nodes: MapNode[]) {
+    // Mark all nodes with reference to this way
+    this.nodes.forEach(node => node.wayRefs.add(this))
+
+    this.calculateBounds()
+  }
+
+  private calculateBounds() {
+    const [firstNode] = this.nodes
+    let minLat = firstNode.lat
+    let minLon = firstNode.lon
+    let maxLat = firstNode.lat
+    let maxLon = firstNode.lon
+
+    this.nodes.forEach(({ lat, lon }) => {
+      if (lat < minLat) minLat = lat
+      if (lat > maxLat) maxLat = lat
+      if (lon < minLon) minLon = lon
+      if (lon > maxLon) maxLon = lon
+    })
+
+    this.bounds = new MapBounds(minLat, minLon, maxLat, maxLon)
+  }
+}
+export type MapWayList = Map<number, MapWay>
+
 const tagsWhitelist = [
-  'crossing',
-  'highway',
-  'lanes',
-  'amenity',
-  'barrier',
-  'landuse',
-  'surface'
+  'building'
+  // 'crossing',
+  // 'highway',
+  // 'lanes',
+  // 'amenity',
+  // 'barrier',
+  // 'landuse',
+  // 'surface'
 ]
 const tagsValuesBlacklist = new Map([['highway', ['footway']]])
 
@@ -29,10 +63,10 @@ const hasBlacklistedTagValues = (way: MapWay): boolean => {
  * Convert OSM way to the way with references to already parsed Nodes.
  */
 export const parseWay = (way: OSMWay, nodes: MapNodeList): MapWay => {
-  const parsedWay: MapWay = {
-    id: way.$_id,
-    nodes: way.nd.map(nd => nodes.get(nd.$_ref))
-  }
+  const parsedWay = new MapWay(
+    way.$_id,
+    way.nd.map(nd => nodes.get(nd.$_ref))
+  )
 
   // Strip useless tags, if any
   if (way.tag) {

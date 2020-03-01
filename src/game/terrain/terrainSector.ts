@@ -1,6 +1,6 @@
 import { Mesh } from '@babylonjs/core'
 import { getStepping } from '../../utils/mesh'
-import { SectorsMap } from './sectorsMap'
+import { SectorsMap } from './terrainSectorsMap'
 import { memoize } from '../../utils/memoize'
 
 class TerrainSector {

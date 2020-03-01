@@ -35,7 +35,7 @@ const getPlugins = env => {
           to: './'
         },
         {
-          context: './src/game/',
+          context: './src/maps/',
           from: '*.osm',
           to: './'
         }

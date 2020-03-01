@@ -1,5 +1,5 @@
-import { TerrainSector } from "./sector"
-import { Vector2, Vector3 } from "@babylonjs/core"
+import { Vector2, Vector3 } from '@babylonjs/core'
+import { TerrainSector } from './terrainSector'
 
 const drawFilledCircle = (radius, points, addPoint) => {
   for (let y = -radius; y <= radius; y++)
@@ -8,7 +8,7 @@ const drawFilledCircle = (radius, points, addPoint) => {
   return points
 }
 
-class SectorsMap {
+class TerrainSectorsMap {
   sizeX: number
   sizeY: number
   halfSizeX: number
@@ -95,12 +95,12 @@ class SectorsMap {
       const targetMap = {}
 
       const setPoint = (x, y, v) => {
-        if (typeof v !== "number") return
+        if (typeof v !== 'number') return
         if (!targetMap[y]) targetMap[y] = {}
         if (v < targetMap[y][x]) {
           debugger
         }
-        if (typeof targetMap[y][x] !== "number" || v < targetMap[y][x]) {
+        if (typeof targetMap[y][x] !== 'number' || v < targetMap[y][x]) {
           targetMap[y][x] = v
         }
       }
@@ -139,8 +139,8 @@ class SectorsMap {
               lod = targetMap[y][x]
               // Must not already be defined in here
               // Must not already exist in sector.mesh.lod
-              if (typeof lod !== "number") {
-                console.warn("LOD not a number")
+              if (typeof lod !== 'number') {
+                console.warn('LOD not a number')
                 continue
               }
               if (
@@ -148,11 +148,11 @@ class SectorsMap {
                   e => e.x === parseInt(x) && e.y === parseInt(y)
                 )
               ) {
-                console.debug("same sector already exists in result[lod]")
+                console.debug('same sector already exists in result[lod]')
                 continue
               }
               if (this.sectorHasLOD(i, j, lod)) {
-                console.debug("sector already has the same LOD")
+                console.debug('sector already has the same LOD')
                 continue
               }
 
@@ -182,4 +182,4 @@ class SectorsMap {
   }
 }
 
-export { SectorsMap }
+export { TerrainSectorsMap as SectorsMap }
