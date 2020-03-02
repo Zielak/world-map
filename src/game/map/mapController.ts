@@ -5,8 +5,9 @@ import { MapWay } from './ways'
 import { MapSector } from './mapSector'
 import { MapBounds } from './bounds'
 import { Vector2 } from '@babylonjs/core'
+import { MapNode } from './nodes'
 
-const isPolygon = (way: MapWay) =>
+export const isPolygon = (way: MapWay) =>
   way.nodes[0] === way.nodes[way.nodes.length - 1]
 
 class MapController {
@@ -21,6 +22,23 @@ class MapController {
     const { sectors } = this.sectors
     sectors.set(0, new MapSector(new MapBounds(-90, -180, 90, 0), 1))
     sectors.set(1, new MapSector(new MapBounds(-90, 0, 90, 180), 1))
+  }
+
+  addNode(node: MapNode) {
+    const { sectors, geoConv, renderer } = this
+
+    sectors.addNode(node)
+
+    const enu = geoConv.geodetic2Enu(node.lat, node.lon, 0)
+    console.log('addNode ENU:', enu)
+
+    node.renderedRef = renderer.addNode(
+      node.id,
+      enu.east,
+      enu.up,
+      enu.north,
+      100
+    )
   }
 
   addWay(way: MapWay) {

@@ -30,15 +30,19 @@ export class MapWay {
 
     this.bounds = new MapBounds(minLat, minLon, maxLat, maxLon)
   }
+
+  get isRendered(): boolean {
+    return this.renderedRef !== undefined
+  }
 }
 export type MapWayList = Map<number, MapWay>
 
 const tagsWhitelist = [
-  'building'
+  'building',
   // 'crossing',
-  // 'highway',
+  'highway',
   // 'lanes',
-  // 'amenity',
+  'amenity'
   // 'barrier',
   // 'landuse',
   // 'surface'
@@ -86,6 +90,8 @@ export const parseWay = (way: OSMWay, nodes: MapNodeList): MapWay => {
 export const filterWays = (way: MapWay): boolean => {
   const hasAnyTags = way.tags && Object.keys(way.tags).length > 0
   const hasBlacklistedTags = hasBlacklistedTagValues(way)
+
+  // if(way.tags.building)
 
   return hasAnyTags && !hasBlacklistedTags
 }

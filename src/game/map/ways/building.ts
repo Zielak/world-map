@@ -1,39 +1,45 @@
 import { MapWay } from '../ways'
 
+export const isBuilding = (way: MapWay) => {}
+
 export const buildingStillExists = (way: MapWay): boolean => {
   // TODO: building's size should be taken under consideration
   const { tags } = way
 
-  // range (-1)-(2)
+  // range (-2)-(2)
   const byId = Math.sin(way.id / 2) * 2
 
-  let strength: number = 0
+  let score: number = 0
   if ('building' in tags) {
     switch (tags.building) {
       case 'church':
-        strength = 10
+        score += 10
         break
       case 'apartments':
-        strength = 0.8
+        score += 0.8
         break
       case 'industrial':
-        strength = 2
+        score += 2
         break
       case 'residential':
-        strength = 0.6
+        score += 0.6
         break
       case 'house':
-        strength = 0
+        score += 0
         break
       case 'garage':
       case 'garages':
-        strength = -0.1
+        score += -0.1
         break
       case 'shed':
-        strength = -0.3
+        score += -0.3
         break
     }
   }
 
-  return byId + strength >= 1
+  if ('building:levels' in tags || 'building:height' in tags) {
+    score += 2
+  }
+
+  return byId + score >= 1
 }

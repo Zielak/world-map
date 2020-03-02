@@ -20,7 +20,7 @@ window['viewport'] = renderer
 // window['terrain'] = terrainController
 window['map'] = mapController
 
-fetch('bostonNorthEnd.osm')
+fetch((document.location.search.slice(1) || 'pogonKosciol') + '.osm')
   .then(data => data.text())
   .then(function onFetchMapData(string) {
     const mapData = parseOSMXml(string)
@@ -31,13 +31,19 @@ fetch('bostonNorthEnd.osm')
       0
     )
 
-    renderer.addNode('test', 0, 0, 0)
+    renderer.addNode('test', 0, -10, 0)
+    renderer.addNode('test', 0, 10, 0)
 
     // Render every node from every way
-    mapData.waysMap.forEach(function addEachWay(way) {
+    mapData.waysMap?.forEach(function addEachWay(way) {
       // const material = 'node'
       // way.nodes.forEach(node => {})
       mapController.addWay(way)
+    })
+    mapData.nodesMap?.forEach(function addEachNode(node) {
+      // const material = 'node'
+      // way.nodes.forEach(node => {})
+      mapController.addNode(node)
     })
 
     window['mapRaw'] = mapData

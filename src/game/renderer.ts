@@ -126,15 +126,17 @@ class Renderer {
     camera.keysRight = [39, 68]
   }
 
-  addNode(nodeId, x, y, z) {
+  addNode(nodeId, x, y, z, size: number = 2) {
     // console.log('RENDERER:', `add node ${nodeId} at`, x, y, z)
     const nodeBox = MeshBuilder.CreateBox(
       `node_${nodeId}`,
-      { size: 2 },
+      { size },
       this.scene
     )
     nodeBox.position.set(x, y, z)
     // nodeBox.setMaterialByID('node')
+
+    return nodeBox
   }
 
   addPolygonWay(way: MapWay, points: Vector2[]) {

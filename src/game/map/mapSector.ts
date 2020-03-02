@@ -92,6 +92,21 @@ export class MapSector {
     }
   }
 
+  getAllSectorsByLevel(level: number): MapSector[] {
+    if (level < 0 || level > LEVELS.length - 1) {
+      throw new Error(`getAllSectorsByLevel, invalid level requested: ${level}`)
+    }
+    if (level === this.level) {
+      return [this]
+    }
+    if (level >= this.level) {
+      return [...this.sectors.values()].reduce(
+        (arr, sector) => arr.concat(sector.getAllSectorsByLevel(level)),
+        []
+      )
+    }
+  }
+
   coordsFitHere(lat: number, lon: number): boolean {
     const { minLat, maxLat, minLon, maxLon } = this.bounds
 
@@ -137,6 +152,38 @@ export class MapSector {
         // No sub-sector could fit this guy, add it here
         this.ways.push(way)
       }
+    }
+  }
+
+  /**
+   * Find the best inner sector to put this node in.
+   * @param node
+   */
+  addNode(node: MapNode) {
+    if (this.level === LEVELS.length - 1) {
+      // Can't dig any deeper, let's just add it in here.
+      this.nodes.push(node)
+      return true
+    }
+
+    // See if it could fit in any sub-sector
+    if (!this.isSubdivided) {
+      this.subdivide()
+    }
+    let targetSector: MapSector
+    for (const subSector of this.sectors.values()) {
+      if (subSector.bounds.canFitPoint(node.lat, node.lon)) {
+        targetSector = subSector
+        break
+      }
+    }
+
+    if (targetSector) {
+      targetSector.addNode(node)
+    } else {
+      // No sub-sector could fit this guy, add it here
+      // FIXME: probably won't happen with nodes.
+      this.nodes.push(node)
     }
   }
 

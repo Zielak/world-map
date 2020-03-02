@@ -37,6 +37,12 @@ export class MapBounds {
       isWithin(other.maxLon, minLon, maxLon)
     )
   }
+
+  canFitPoint(lat: number, lon: number): boolean {
+    const { minLat, minLon, maxLat, maxLon } = this
+
+    return isWithin(lat, minLat, maxLat) && isWithin(lon, minLon, maxLon)
+  }
 }
 
 export const parseBounds = ({

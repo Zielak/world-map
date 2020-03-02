@@ -4,6 +4,7 @@ import { MapWay } from './ways'
 export class MapNode {
   wayRefs: Set<MapWay>
   tags: MapTags
+  renderedRef: any
 
   constructor(public id: number, public lat: number, public lon: number) {
     this.wayRefs = new Set()
@@ -21,6 +22,10 @@ export class MapNode {
    */
   get standalone(): boolean {
     return typeof this.tags !== 'undefined' && Object.keys(this.tags).length > 0
+  }
+
+  get isRendered(): boolean {
+    return this.renderedRef !== undefined
   }
 }
 
