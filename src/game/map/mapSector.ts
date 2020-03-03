@@ -110,7 +110,10 @@ export class MapSector {
   coordsFitHere(lat: number, lon: number): boolean {
     const { minLat, maxLat, minLon, maxLon } = this.bounds
 
-    return isWithin(lat, minLat, maxLat) && isWithin(lon, minLon, maxLon)
+    // return isWithin(lat, minLat, maxLat) && isWithin(lon, minLon, maxLon)
+    const fitsLan = minLat < lat && lat <= maxLat
+    const fitsLon = minLon < lon && lon <= maxLon
+    return fitsLan && fitsLon
   }
 
   /**

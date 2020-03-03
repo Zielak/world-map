@@ -25,12 +25,6 @@ fetch((document.location.search.slice(1) || 'pogonKosciol') + '.osm')
   .then(function onFetchMapData(string) {
     const mapData = parseOSMXml(string)
 
-    mapController.geoConv.setReference(
-      mapData.bounds.centerLat,
-      mapData.bounds.centerLon,
-      0
-    )
-
     renderer.addNode('test', 0, -10, 0)
     renderer.addNode('test', 0, 10, 0)
 
@@ -45,6 +39,13 @@ fetch((document.location.search.slice(1) || 'pogonKosciol') + '.osm')
       // way.nodes.forEach(node => {})
       mapController.addNode(node)
     })
+
+    // Put all that data to Renderer, sector by sector
+    mapController.bake(
+      renderer,
+      mapData.bounds.centerLat,
+      mapData.bounds.centerLon
+    )
 
     window['mapRaw'] = mapData
   })

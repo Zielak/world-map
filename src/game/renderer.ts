@@ -107,7 +107,7 @@ class Renderer {
       this.scene
     )
     this.camera = camera
-    camera.speed = 5
+    camera.speed = 15
     camera.setTarget(new Vector3(5, 1.8, 5))
     camera.attachControl(this.canvas, true)
 

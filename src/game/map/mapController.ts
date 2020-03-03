@@ -25,20 +25,9 @@ class MapController {
   }
 
   addNode(node: MapNode) {
-    const { sectors, geoConv, renderer } = this
+    const { sectors } = this
 
     sectors.addNode(node)
-
-    const enu = geoConv.geodetic2Enu(node.lat, node.lon, 0)
-    console.log('addNode ENU:', enu)
-
-    node.renderedRef = renderer.addNode(
-      node.id,
-      enu.east,
-      enu.up,
-      enu.north,
-      100
-    )
   }
 
   addWay(way: MapWay) {
@@ -50,19 +39,56 @@ class MapController {
 
   addPolygonWay(way: MapWay) {
     // Construct a polygon out of given nodes.
-    const { sectors, geoConv, renderer } = this
+    const { sectors } = this
 
     sectors.addWay(way)
+  }
 
-    way.renderedRef = renderer.addPolygonWay(
-      way,
-      way.nodes
-        .map(function convertNodeCoords(node) {
-          const enu = geoConv.geodetic2Enu(node.lat, node.lon, 0)
-          return new Vector2(enu.east, enu.north)
-        })
-        .slice(0, -1)
-    )
+  /**
+   * Put all known things to 3D space scene
+   * @param renderer
+   */
+  bake(renderer: Renderer, lat: number, lon: number) {
+    const { geoConv, sectors } = this
+
+    // const chunk = sectors.getAllSectorsByCoords(lat, lon)
+    const chunk = sectors
+      .getAllSectorsByLevel(14)
+      .filter(sector => sector.nodes.length || sector.ways.length)
+    console.debug('BAKE: sectors to bake:', chunk.length)
+
+    chunk.map(sector => {
+      // Set new reference point
+      geoConv.setReference(sector.bounds.centerLat, sector.bounds.centerLon, 0)
+
+      // Dump nodes
+      sector.nodes.forEach(node => {
+        const enu = geoConv.geodetic2Enu(node.lat, node.lon, 0)
+        // FIXME: ADD distance between sectors, from lat/lon difference
+        console.log('addNode ENU:', enu)
+
+        node.renderedRef = renderer.addNode(
+          node.id,
+          enu.east,
+          enu.up,
+          enu.north,
+          100
+        )
+      })
+
+      // Dump ways
+      sector.ways.forEach(way => {
+        way.renderedRef = renderer.addPolygonWay(
+          way,
+          way.nodes
+            .map(function convertNodeCoords(node) {
+              const enu = geoConv.geodetic2Enu(node.lat, node.lon, 0)
+              return new Vector2(enu.east, enu.north)
+            })
+            .slice(0, -1)
+        )
+      })
+    })
   }
 }
 
