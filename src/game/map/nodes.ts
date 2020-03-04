@@ -1,20 +1,46 @@
+import { Vector3 } from '@babylonjs/core'
+
+import { Renderer } from '../renderer'
+import { MapSectorBottom } from './mapSector'
 import { simplifyTags } from './tags'
 import { MapWay } from './ways'
 
 export class MapNode {
-  wayRefs: Set<MapWay>
   tags: MapTags
+  wayRefs: Set<MapWay>
+
+  sector: MapSectorBottom
+  relativePosition: Vector3
+
   renderedRef: any
 
   constructor(public id: number, public lat: number, public lon: number) {
     this.wayRefs = new Set()
   }
 
+  addToSector(sector: MapSectorBottom) {
+    this.sector = sector
+
+    // parse node's position, relative to sector
+    const { east, north, up } = sector.geoConv.geodetic2Enu(
+      this.lat,
+      this.lon,
+      0
+    )
+    this.relativePosition = new Vector3(east, north, up)
+    console.log('node relative ENU:', this.relativePosition)
+  }
+
+  render(renderer: Renderer) {
+    this.renderedRef = renderer.addNode(this.id, this.relativePosition, 100)
+    return this.renderedRef
+  }
+
   /**
    * Node is used in some Way object
    */
   get inWay(): boolean {
-    return this.wayRefs.size == 0
+    return this.wayRefs.size > 0
   }
 
   /**

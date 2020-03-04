@@ -126,14 +126,14 @@ class Renderer {
     camera.keysRight = [39, 68]
   }
 
-  addNode(nodeId, x, y, z, size: number = 2) {
+  addNode(nodeId, position: Vector3, size: number = 2) {
     // console.log('RENDERER:', `add node ${nodeId} at`, x, y, z)
     const nodeBox = MeshBuilder.CreateBox(
       `node_${nodeId}`,
       { size },
       this.scene
     )
-    nodeBox.position.set(x, y, z)
+    nodeBox.position.copyFrom(position)
     // nodeBox.setMaterialByID('node')
 
     return nodeBox

@@ -1,32 +1,48 @@
-import { GeodeticConverter } from '../../utils/geodeticConverter'
 import { Renderer } from '../renderer'
-import { MapWay } from './ways'
 
-import { MapSector } from './mapSector'
 import { MapBounds } from './bounds'
-import { Vector2 } from '@babylonjs/core'
 import { MapNode } from './nodes'
+import { MapSector, isBottomSector } from './mapSector'
+import { MapWay } from './ways'
 
 export const isPolygon = (way: MapWay) =>
   way.nodes[0] === way.nodes[way.nodes.length - 1]
 
 class MapController {
-  geoConv: GeodeticConverter
   sectors: MapSector
 
-  constructor(options: {}, private renderer: Renderer) {
-    this.geoConv = new GeodeticConverter()
+  nodes: Map<number, MapNode>
 
-    this.sectors = new MapSector(new MapBounds(-90, -180, 90, 180), 0)
+  constructor() {
+    this.sectors = new MapSector({
+      bounds: new MapBounds(-90, -180, 90, 180),
+      level: 0
+    })
+    this.nodes = new Map()
 
     const { sectors } = this.sectors
-    sectors.set(0, new MapSector(new MapBounds(-90, -180, 90, 0), 1))
-    sectors.set(1, new MapSector(new MapBounds(-90, 0, 90, 180), 1))
+    sectors.set(
+      0,
+      new MapSector({
+        bounds: new MapBounds(-90, -180, 90, 0),
+        level: 1,
+        parentSector: this.sectors
+      })
+    )
+    sectors.set(
+      1,
+      new MapSector({
+        bounds: new MapBounds(-90, 0, 90, 180),
+        level: 1,
+        parentSector: this.sectors
+      })
+    )
   }
 
   addNode(node: MapNode) {
     const { sectors } = this
 
+    this.nodes.set(node.id, node)
     sectors.addNode(node)
   }
 
@@ -49,45 +65,37 @@ class MapController {
    * @param renderer
    */
   bake(renderer: Renderer, lat: number, lon: number) {
-    const { geoConv, sectors } = this
+    const { sectors } = this
 
-    // const chunk = sectors.getAllSectorsByCoords(lat, lon)
-    const chunk = sectors
-      .getAllSectorsByLevel(14)
-      .filter(sector => sector.nodes.length || sector.ways.length)
+    const chunk = sectors.getAllSectorsByCoords(lat, lon)
+    // const chunk = sectors
+    //   .getAllSectorsByLevel(14)
     console.debug('BAKE: sectors to bake:', chunk.length)
 
     chunk.map(sector => {
-      // Set new reference point
-      geoConv.setReference(sector.bounds.centerLat, sector.bounds.centerLon, 0)
+      // FIXME: ADD distance between sectors, from lat/lon difference
 
       // Dump nodes
-      sector.nodes.forEach(node => {
-        const enu = geoConv.geodetic2Enu(node.lat, node.lon, 0)
-        // FIXME: ADD distance between sectors, from lat/lon difference
-        console.log('addNode ENU:', enu)
-
-        node.renderedRef = renderer.addNode(
-          node.id,
-          enu.east,
-          enu.up,
-          enu.north,
-          100
-        )
-      })
+      if (isBottomSector(sector)) {
+        sector.nodes.forEach(node => {
+          node.render(renderer)
+        })
+      }
 
       // Dump ways
-      sector.ways.forEach(way => {
-        way.renderedRef = renderer.addPolygonWay(
-          way,
-          way.nodes
-            .map(function convertNodeCoords(node) {
-              const enu = geoConv.geodetic2Enu(node.lat, node.lon, 0)
-              return new Vector2(enu.east, enu.north)
-            })
-            .slice(0, -1)
-        )
-      })
+      // FIXME: Ways should rely on positions of already present nodes and their PARSED positions.
+      // Way's nodes may be in other sectors, need to account for that.
+      // sector.ways.forEach(way => {
+      //   way.renderedRef = renderer.addPolygonWay(
+      //     way,
+      //     way.nodes
+      //       .map(function convertNodeCoords(node) {
+      //         const enu = geoConv.geodetic2Enu(node.lat, node.lon, 0)
+      //         return new Vector2(enu.east, enu.north)
+      //       })
+      //       .slice(0, -1)
+      //   )
+      // })
     })
   }
 }

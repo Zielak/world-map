@@ -2,6 +2,7 @@ import { Renderer } from './renderer'
 import { TerrainController } from './terrain/terrainController'
 import { parseOSMXml } from './map/osmXmlParser'
 import { MapController } from './map/mapController'
+import { Vector3 } from '@babylonjs/core'
 
 const renderer = new Renderer()
 
@@ -14,7 +15,7 @@ const renderer = new Renderer()
 //   },
 //   renderer.scene
 // )
-const mapController = new MapController({}, renderer)
+const mapController = new MapController()
 
 window['viewport'] = renderer
 // window['terrain'] = terrainController
@@ -25,21 +26,17 @@ fetch((document.location.search.slice(1) || 'pogonKosciol') + '.osm')
   .then(function onFetchMapData(string) {
     const mapData = parseOSMXml(string)
 
-    renderer.addNode('test', 0, -10, 0)
-    renderer.addNode('test', 0, 10, 0)
+    renderer.addNode('test', new Vector3(0, -10, 0))
+    renderer.addNode('test', new Vector3(0, 10, 0))
 
-    // Render every node from every way
-    mapData.waysMap?.forEach(function addEachWay(way) {
-      // const material = 'node'
-      // way.nodes.forEach(node => {})
-      mapController.addWay(way)
-    })
     mapData.nodesMap?.forEach(function addEachNode(node) {
-      // const material = 'node'
-      // way.nodes.forEach(node => {})
       mapController.addNode(node)
     })
 
+    // Render every node from every way
+    mapData.waysMap?.forEach(function addEachWay(way) {
+      mapController.addWay(way)
+    })
     // Put all that data to Renderer, sector by sector
     mapController.bake(
       renderer,

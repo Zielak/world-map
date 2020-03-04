@@ -22,6 +22,15 @@ export const isWithin = (value: number, a: number, b: number): boolean => {
   return value === a && value === b
 }
 
+/**
+ * Limits the number of digits "after comma"
+ */
+export const decimal = (value: number, maxZeroes = 2): number => {
+  const pow = Math.pow(10, maxZeroes)
+
+  return Math.round(value * pow) / pow
+}
+
 export const rad2deg = (angle: number): number => {
   //  discuss at: http://locutus.io/php/rad2deg/
   // original by: Enrique Gonzalez

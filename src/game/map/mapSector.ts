@@ -1,7 +1,11 @@
-import { MapNode } from './nodes'
-import { MapWay, MapWayList } from './ways'
+import { TransformNode, Scene } from '@babylonjs/core'
+
+import { decimal } from '../../utils/numbers'
+import { GeodeticConverter } from '../../utils/geodeticConverter'
+
 import { MapBounds } from './bounds'
-import { isWithin } from '../../utils/numbers'
+import { MapNode } from './nodes'
+import { MapWay } from './ways'
 
 class LimitedMap<T> extends Map<number, T> {
   constructor(private limit: number) {
@@ -37,6 +41,18 @@ const LEVELS = Object.freeze([
   0.02197265625
 ])
 
+export type MapSectorOptions = {
+  bounds: MapBounds
+  level: number
+  parentSector?: MapSector
+}
+
+export const isBottomSector = (
+  sector: MapSector | MapSectorBottom
+): sector is MapSectorBottom => {
+  return sector.level === LEVELS.length - 1
+}
+
 export class MapSector {
   level: number
   bounds: MapBounds
@@ -45,16 +61,14 @@ export class MapSector {
 
   sectors: LimitedMap<MapSector>
 
-  nodes: MapNode[]
   ways: MapWay[]
 
-  constructor(bounds: MapBounds, level: number) {
-    this.bounds = bounds
-    this.level = level
-    this.halfSizeLat = bounds.sizeLat / 2
-    this.halfSizeLon = bounds.sizeLon / 2
+  constructor(options: MapSectorOptions) {
+    this.bounds = options.bounds
+    this.level = options.level
+    this.halfSizeLat = options.bounds.sizeLat / 2
+    this.halfSizeLon = options.bounds.sizeLon / 2
 
-    this.nodes = []
     this.ways = []
 
     /** ________
@@ -126,7 +140,7 @@ export class MapSector {
     }
 
     // It can fit inside this sector
-    if (this.level === LEVELS.length - 1) {
+    if (isBottomSector(this)) {
       // Can't dig any deeper, let's just add it in here.
       this.ways.push(way)
       return true
@@ -159,35 +173,22 @@ export class MapSector {
   }
 
   /**
-   * Find the best inner sector to put this node in.
+   * Find the most bottom sector to put this node in.
+   * Populates node with its position in 3D space, relative to sector's origin
    * @param node
    */
   addNode(node: MapNode) {
-    if (this.level === LEVELS.length - 1) {
-      // Can't dig any deeper, let's just add it in here.
-      this.nodes.push(node)
-      return true
-    }
-
     // See if it could fit in any sub-sector
-    if (!this.isSubdivided) {
+    if (!this.isSubdivided && !isBottomSector(this)) {
       this.subdivide()
     }
-    let targetSector: MapSector
     for (const subSector of this.sectors.values()) {
       if (subSector.bounds.canFitPoint(node.lat, node.lon)) {
-        targetSector = subSector
-        break
+        return subSector.addNode(node)
       }
     }
-
-    if (targetSector) {
-      targetSector.addNode(node)
-    } else {
-      // No sub-sector could fit this guy, add it here
-      // FIXME: probably won't happen with nodes.
-      this.nodes.push(node)
-    }
+    throw new Error(`sector.addNode() couldn't add for some reason?`)
+    // return false
   }
 
   /**
@@ -200,34 +201,40 @@ export class MapSector {
 
     const { level } = this
     const { minLat, maxLat, minLon, maxLon, centerLon, centerLat } = this.bounds
+    const sectorConstructor =
+      this.level === LEVELS.length - 2 ? MapSectorBottom : MapSector
 
     this.sectors.set(
       0,
-      new MapSector(
-        new MapBounds(minLat, minLon, centerLat, centerLon),
-        level + 1
-      )
+      new sectorConstructor({
+        bounds: new MapBounds(minLat, minLon, centerLat, centerLon),
+        level: level + 1,
+        parentSector: this
+      })
     )
     this.sectors.set(
       1,
-      new MapSector(
-        new MapBounds(minLat, centerLon, centerLat, maxLon),
-        level + 1
-      )
+      new sectorConstructor({
+        bounds: new MapBounds(minLat, centerLon, centerLat, maxLon),
+        level: level + 1,
+        parentSector: this
+      })
     )
     this.sectors.set(
       2,
-      new MapSector(
-        new MapBounds(centerLat, minLon, maxLat, centerLon),
-        level + 1
-      )
+      new sectorConstructor({
+        bounds: new MapBounds(centerLat, minLon, maxLat, centerLon),
+        level: level + 1,
+        parentSector: this
+      })
     )
     this.sectors.set(
       3,
-      new MapSector(
-        new MapBounds(centerLat, centerLon, maxLat, maxLon),
-        level + 1
-      )
+      new sectorConstructor({
+        bounds: new MapBounds(centerLat, centerLon, maxLat, maxLon),
+        level: level + 1,
+        parentSector: this
+      })
     )
   }
 
@@ -237,5 +244,42 @@ export class MapSector {
 
   get(idx: number) {
     this.sectors.get(idx)
+  }
+}
+
+export class MapSectorBottom extends MapSector {
+  geoConv: GeodeticConverter
+
+  nodes: MapNode[]
+  // Once everything is ready, a sector should be rendered as a container of all its things
+  renderedRef: TransformNode
+
+  constructor(options: MapSectorOptions) {
+    super(options)
+
+    this.geoConv = new GeodeticConverter()
+    this.geoConv.setReference(
+      options.bounds.centerLat,
+      options.bounds.centerLon,
+      0
+    )
+    this.nodes = []
+
+    const { centerLat, centerLon } = this.bounds
+    this.renderedRef = new TransformNode(
+      `sector_${this.level}_${decimal(centerLat, 2)}_${decimal(centerLon, 2)}`
+    )
+  }
+
+  addNode(node: MapNode) {
+    // Can't dig any deeper, let's just add it in here.
+    node.addToSector(this)
+    this.nodes.push(node)
+    return true
+  }
+
+  subdivide() {}
+  get isSubdivided(): boolean {
+    return false
   }
 }
