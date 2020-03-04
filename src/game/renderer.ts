@@ -139,8 +139,15 @@ class Renderer {
     return nodeBox
   }
 
-  addPolygonWay(way: MapWay, points: Vector2[]) {
+  addPolygonWay(way: MapWay, materialID: string = 'building') {
     if (!buildingStillExists(way)) return
+
+    const points = way.nodes
+      .map(node => {
+        const { x, z } = node.relativePosition
+        return new Vector2(x, z)
+      })
+      .slice(0, -1)
 
     const polygonTriangulation = new PolygonMeshBuilder(
       'way' + way.id,
@@ -150,7 +157,7 @@ class Renderer {
     )
     const height = determineBuildingHeight(way)
     const polygon = polygonTriangulation.build(false, height)
-    polygon.setMaterialByID('building')
+    polygon.setMaterialByID(materialID)
     polygon.position.y = height
 
     return polygon

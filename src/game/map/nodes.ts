@@ -18,6 +18,10 @@ export class MapNode {
     this.wayRefs = new Set()
   }
 
+  /**
+   * Prepare node's location in 3D space and hook it to its sector
+   * @param sector
+   */
   addToSector(sector: MapSectorBottom) {
     this.sector = sector
 
@@ -27,13 +31,17 @@ export class MapNode {
       this.lon,
       0
     )
-    this.relativePosition = new Vector3(east, north, up)
-    console.log('node relative ENU:', this.relativePosition)
+    this.relativePosition = new Vector3(east, up, north)
+    // console.log('node relative ENU:', this.relativePosition)
   }
 
-  render(renderer: Renderer) {
-    this.renderedRef = renderer.addNode(this.id, this.relativePosition, 100)
-    return this.renderedRef
+  render(renderer: Renderer): void {
+    if (this.standalone) {
+      const size = this.tags?.test === 'yes' ? 100 : 2
+      this.renderedRef = renderer.addNode(this.id, this.relativePosition, size)
+      // I have to assume the sector this node is in, is already "rendered" in 3D space
+      this.renderedRef.parent = this.sector.renderedRef
+    }
   }
 
   /**
@@ -88,7 +96,8 @@ const tagsWhitelist = [
   'amenity',
   'barrier',
   'landuse',
-  'surface'
+  'surface',
+  'test'
 ]
 
 const filterTags = (tag: OSMTag): boolean => {

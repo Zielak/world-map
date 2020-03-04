@@ -23,7 +23,7 @@ class LimitedMap<T> extends Map<number, T> {
 
 // const MAX_NODES = 100
 
-const LEVELS = Object.freeze([
+export const LEVELS = Object.freeze([
   360,
   180,
   90,
@@ -43,8 +43,9 @@ const LEVELS = Object.freeze([
 
 export type MapSectorOptions = {
   bounds: MapBounds
-  level: number
-  parentSector?: MapSector
+  idx: number
+  level?: number
+  parent?: MapSector
 }
 
 export const isBottomSector = (
@@ -54,17 +55,21 @@ export const isBottomSector = (
 }
 
 export class MapSector {
+  idx: number
   level: number
   bounds: MapBounds
   halfSizeLat: number
   halfSizeLon: number
 
+  parent: MapSector
   sectors: LimitedMap<MapSector>
 
   ways: MapWay[]
 
   constructor(options: MapSectorOptions) {
+    this.idx = options.idx
     this.bounds = options.bounds
+    this.parent = options.parent
     this.level = options.level
     this.halfSizeLat = options.bounds.sizeLat / 2
     this.halfSizeLon = options.bounds.sizeLon / 2
@@ -78,32 +83,74 @@ export class MapSector {
     this.sectors = new LimitedMap(4)
   }
 
+  add(options: MapSectorOptions) {
+    const sectorConstructor =
+      this.level === LEVELS.length - 2 ? MapSectorBottom : MapSector
+
+    this.sectors.set(
+      options.idx,
+      new sectorConstructor({
+        ...options,
+        level: this.level + 1,
+        idx: options.idx,
+        parent: this
+      })
+    )
+  }
+
   /**
-   * Gets you all sub-sectors for given coordinates
+   * Gets you all sub-sectors (all levels) for given coordinates
    * @param lat
    * @param lon
-   * @param _resultsArray used internally, don't pass any value here
    */
-  getAllSectorsByCoords(
-    lat: number,
-    lon: number,
-    _resultsArray: MapSector[] = []
-  ): MapSector[] {
-    if (!this.coordsFitHere(lat, lon)) {
-      return _resultsArray
-    }
+  getSectorsByCoords(lat: number, lon: number): MapSector[] {
+    const travel = (sector: MapSector, result: MapSector[] = []) => {
+      if (!sector.coordsFitHere(lat, lon)) {
+        return result
+      }
 
-    if (!this.isSubdivided) {
-      _resultsArray.push(this)
-      return _resultsArray
-    }
+      if (!sector.isSubdivided) {
+        result.push(sector)
+        return result
+      }
 
-    for (const subSector of this.sectors.values()) {
-      if (subSector.coordsFitHere(lat, lon)) {
-        _resultsArray.push(this)
-        return subSector.getAllSectorsByCoords(lat, lon, _resultsArray)
+      for (const subSector of sector.sectors.values()) {
+        if (subSector.coordsFitHere(lat, lon)) {
+          result.push(sector)
+          return travel(subSector, result)
+        }
       }
     }
+
+    return travel(this, [])
+  }
+
+  /**
+   * Gets only the bottom sector with its neighbors.
+   * @param lat
+   * @param lon
+   */
+  getBottomSectorByCoords(lat: number, lon: number): MapSectorBottom {
+    const travel = (sector: MapSector) => {
+      if (!sector.coordsFitHere(lat, lon)) {
+        return
+      }
+
+      if (!sector.isSubdivided) {
+        return
+      }
+
+      for (const subSector of sector.sectors.values()) {
+        if (subSector.coordsFitHere(lat, lon)) {
+          if (isBottomSector(subSector)) {
+            return subSector
+          }
+          return travel(subSector)
+        }
+      }
+    }
+
+    return travel(this)
   }
 
   getAllSectorsByLevel(level: number): MapSector[] {
@@ -201,41 +248,31 @@ export class MapSector {
 
     const { level } = this
     const { minLat, maxLat, minLon, maxLon, centerLon, centerLat } = this.bounds
-    const sectorConstructor =
-      this.level === LEVELS.length - 2 ? MapSectorBottom : MapSector
 
-    this.sectors.set(
-      0,
-      new sectorConstructor({
-        bounds: new MapBounds(minLat, minLon, centerLat, centerLon),
-        level: level + 1,
-        parentSector: this
-      })
-    )
-    this.sectors.set(
-      1,
-      new sectorConstructor({
-        bounds: new MapBounds(minLat, centerLon, centerLat, maxLon),
-        level: level + 1,
-        parentSector: this
-      })
-    )
-    this.sectors.set(
-      2,
-      new sectorConstructor({
-        bounds: new MapBounds(centerLat, minLon, maxLat, centerLon),
-        level: level + 1,
-        parentSector: this
-      })
-    )
-    this.sectors.set(
-      3,
-      new sectorConstructor({
-        bounds: new MapBounds(centerLat, centerLon, maxLat, maxLon),
-        level: level + 1,
-        parentSector: this
-      })
-    )
+    this.add({
+      idx: 0,
+      bounds: new MapBounds(minLat, minLon, centerLat, centerLon),
+      level: level + 1,
+      parent: this
+    })
+    this.add({
+      idx: 1,
+      bounds: new MapBounds(minLat, centerLon, centerLat, maxLon),
+      level: level + 1,
+      parent: this
+    })
+    this.add({
+      idx: 2,
+      bounds: new MapBounds(centerLat, minLon, maxLat, centerLon),
+      level: level + 1,
+      parent: this
+    })
+    this.add({
+      idx: 3,
+      bounds: new MapBounds(centerLat, centerLon, maxLat, maxLon),
+      level: level + 1,
+      parent: this
+    })
   }
 
   get isSubdivided(): boolean {

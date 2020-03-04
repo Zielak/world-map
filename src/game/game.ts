@@ -33,10 +33,10 @@ fetch((document.location.search.slice(1) || 'pogonKosciol') + '.osm')
       mapController.addNode(node)
     })
 
-    // Render every node from every way
     mapData.waysMap?.forEach(function addEachWay(way) {
       mapController.addWay(way)
     })
+
     // Put all that data to Renderer, sector by sector
     mapController.bake(
       renderer,
