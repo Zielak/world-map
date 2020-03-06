@@ -1,11 +1,10 @@
-import { TransformNode, Scene } from '@babylonjs/core'
+import { TransformNode } from '@babylonjs/core'
 
-import { decimal } from '../../utils/numbers'
 import { GeodeticConverter } from '../../utils/geodeticConverter'
 
 import { MapBounds } from './bounds'
-import { MapNode } from './nodes'
-import { MapWay } from './ways'
+import { MapNode } from './nodes/nodes'
+import { MapWay } from './ways/ways'
 
 class LimitedMap<T> extends Map<number, T> {
   constructor(private limit: number) {
@@ -54,7 +53,10 @@ export const isBottomSector = (
   return sector.level === LEVELS.length - 1
 }
 
+let sectorIdCounter = 0
+
 export class MapSector {
+  id: number
   idx: number
   level: number
   bounds: MapBounds
@@ -67,6 +69,7 @@ export class MapSector {
   ways: MapWay[]
 
   constructor(options: MapSectorOptions) {
+    this.id = sectorIdCounter++
     this.idx = options.idx
     this.bounds = options.bounds
     this.parent = options.parent
@@ -169,12 +172,7 @@ export class MapSector {
   }
 
   coordsFitHere(lat: number, lon: number): boolean {
-    const { minLat, maxLat, minLon, maxLon } = this.bounds
-
-    // return isWithin(lat, minLat, maxLat) && isWithin(lon, minLon, maxLon)
-    const fitsLan = minLat < lat && lat <= maxLat
-    const fitsLon = minLon < lon && lon <= maxLon
-    return fitsLan && fitsLon
+    return this.bounds.canFitPoint(lat, lon)
   }
 
   /**
@@ -182,7 +180,7 @@ export class MapSector {
    * @param way
    */
   addWay(way: MapWay) {
-    if (!this.bounds.canFit(way.bounds)) {
+    if (!this.bounds.canFitBounds(way.bounds)) {
       return false
     }
 
@@ -193,29 +191,22 @@ export class MapSector {
       return true
     }
 
-    // See if it could fit in any sub-sector
-    if (
-      way.bounds.sizeLat < this.halfSizeLat &&
-      way.bounds.sizeLon < this.halfSizeLon
-    ) {
-      // Size-wise it could fit, but still, bounds position matters.
-      if (!this.isSubdivided) {
-        this.subdivide()
+    if (!this.isSubdivided) {
+      this.subdivide()
+    }
+    let targetSector: MapSector
+    for (const subSector of this.sectors.values()) {
+      if (subSector.bounds.canFitBounds(way.bounds)) {
+        targetSector = subSector
+        break
       }
-      let targetSector: MapSector
-      for (const subSector of this.sectors.values()) {
-        if (subSector.bounds.canFit(way.bounds)) {
-          targetSector = subSector
-          break
-        }
-      }
+    }
 
-      if (targetSector) {
-        targetSector.addWay(way)
-      } else {
-        // No sub-sector could fit this guy, add it here
-        this.ways.push(way)
-      }
+    if (targetSector) {
+      targetSector.addWay(way)
+    } else {
+      // No sub-sector could fit this guy, add it here
+      this.ways.push(way)
     }
   }
 
@@ -289,7 +280,7 @@ export class MapSectorBottom extends MapSector {
 
   nodes: MapNode[]
   // Once everything is ready, a sector should be rendered as a container of all its things
-  renderedRef: TransformNode
+  transformNode: TransformNode
 
   constructor(options: MapSectorOptions) {
     super(options)
@@ -300,12 +291,18 @@ export class MapSectorBottom extends MapSector {
       options.bounds.centerLon,
       0
     )
-    this.nodes = []
 
-    const { centerLat, centerLon } = this.bounds
-    this.renderedRef = new TransformNode(
-      `sector_${this.level}_${decimal(centerLat, 2)}_${decimal(centerLon, 2)}`
-    )
+    const firstNode = new MapNode({
+      id: -1000 - this.id,
+      lat: options.bounds.centerLat,
+      lon: options.bounds.centerLon,
+      tags: { test: 'yes' },
+      sector: this
+    })
+
+    this.nodes = [firstNode]
+
+    this.transformNode = new TransformNode(`${this.id}_${this.level}`)
   }
 
   addNode(node: MapNode) {
@@ -318,5 +315,29 @@ export class MapSectorBottom extends MapSector {
   subdivide() {}
   get isSubdivided(): boolean {
     return false
+  }
+
+  get position() {
+    return this.transformNode?.position
+  }
+
+  get sizeByNodes() {
+    const sizeByNodes = this.nodes.reduce(
+      (res, node) => {
+        if (node.relativePosition.x < res.minX)
+          res.minX = node.relativePosition.x
+        if (node.relativePosition.z < res.minZ)
+          res.minZ = node.relativePosition.z
+        if (node.relativePosition.x > res.maxX)
+          res.maxX = node.relativePosition.x
+        if (node.relativePosition.z > res.maxZ)
+          res.maxZ = node.relativePosition.z
+
+        return res
+      },
+      { minX: 0, minZ: 0, maxX: 0, maxZ: 0 }
+    )
+
+    return sizeByNodes
   }
 }

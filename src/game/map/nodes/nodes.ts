@@ -1,21 +1,47 @@
 import { Vector3 } from '@babylonjs/core'
 
-import { Renderer } from '../renderer'
-import { MapSectorBottom } from './mapSector'
-import { simplifyTags } from './tags'
-import { MapWay } from './ways'
+import { MapSectorBottom } from '../mapSector'
+import { simplifyTags } from '../tags'
+import { MapWay } from '../ways/ways'
+
+type MapNodeOptions = {
+  id: number
+  lat: number
+  lon: number
+  tags?: MapTags
+  sector?: MapSectorBottom
+}
 
 export class MapNode {
+  id: number
+  lat: number
+  lon: number
+
   tags: MapTags
   wayRefs: Set<MapWay>
 
   sector: MapSectorBottom
+
+  /**
+   * Node's 3D position relative to the center of sector
+   */
   relativePosition: Vector3
 
   renderedRef: any
 
-  constructor(public id: number, public lat: number, public lon: number) {
+  constructor(options: MapNodeOptions) {
+    this.id = options.id
+    this.lat = options.lat
+    this.lon = options.lon
+
     this.wayRefs = new Set()
+
+    if (options.tags) {
+      this.tags = options.tags
+    }
+    if (options.sector) {
+      this.addToSector(options.sector)
+    }
   }
 
   /**
@@ -23,25 +49,19 @@ export class MapNode {
    * @param sector
    */
   addToSector(sector: MapSectorBottom) {
+    if (this.sector) {
+      throw new Error(`Nod${this.id} already exists in other sector!`)
+    }
     this.sector = sector
 
     // parse node's position, relative to sector
     const { east, north, up } = sector.geoConv.geodetic2Enu(
-      this.lat,
-      this.lon,
+      this.lat - sector.bounds.centerLat,
+      this.lon - sector.bounds.centerLon,
       0
     )
     this.relativePosition = new Vector3(east, up, north)
     // console.log('node relative ENU:', this.relativePosition)
-  }
-
-  render(renderer: Renderer): void {
-    if (this.standalone) {
-      const size = this.tags?.test === 'yes' ? 100 : 2
-      this.renderedRef = renderer.addNode(this.id, this.relativePosition, size)
-      // I have to assume the sector this node is in, is already "rendered" in 3D space
-      this.renderedRef.parent = this.sector.renderedRef
-    }
   }
 
   /**
@@ -108,17 +128,21 @@ const filterTags = (tag: OSMTag): boolean => {
 }
 
 export const parseNode = (node: OSMNode): MapNode => {
-  const parsedNode = new MapNode(node.$_id, node.$_lat, node.$_lon)
+  const options: MapNodeOptions = {
+    id: node.$_id,
+    lat: node.$_lat,
+    lon: node.$_lon
+  }
 
   // Strip useless tags, if any
   if (node.tag) {
     const tags = node.tag.filter(filterTags)
     if (tags.length > 0) {
-      parsedNode.tags = simplifyTags(tags)
+      options.tags = simplifyTags(tags)
     }
   }
 
-  return parsedNode
+  return new MapNode(options)
 }
 
 /**

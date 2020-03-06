@@ -1,4 +1,4 @@
-import { middle, isWithin } from '../../utils/numbers'
+import { middle } from '../../utils/numbers'
 
 export class MapBounds {
   centerLat: number
@@ -27,21 +27,24 @@ export class MapBounds {
    * @param other
    * @returns `false` is at least one of the edges cross outside of this bounds
    */
-  canFit(other: MapBounds) {
+  canFitBounds(other: MapBounds) {
     const { minLat, minLon, maxLat, maxLon } = this
 
-    return (
-      isWithin(other.minLat, minLat, maxLat) &&
-      isWithin(other.maxLat, minLat, maxLat) &&
-      isWithin(other.minLon, minLon, maxLon) &&
-      isWithin(other.maxLon, minLon, maxLon)
-    )
+    const minlat = minLat < other.minLat && other.minLat <= maxLat
+    const maxlat = minLat < other.maxLat && other.maxLat <= maxLat
+    const minlon = minLon < other.minLon && other.minLon <= maxLon
+    const maxlon = minLon < other.maxLon && other.maxLon <= maxLon
+
+    return minlat && maxlat && minlon && maxlon
   }
 
   canFitPoint(lat: number, lon: number): boolean {
-    const { minLat, minLon, maxLat, maxLon } = this
+    const { minLat, maxLat, minLon, maxLon } = this
 
-    return isWithin(lat, minLat, maxLat) && isWithin(lon, minLon, maxLon)
+    // return isWithin(lat, minLat, maxLat) && isWithin(lon, minLon, maxLon)
+    const fitsLan = minLat < lat && lat <= maxLat
+    const fitsLon = minLon < lon && lon <= maxLon
+    return fitsLan && fitsLon
   }
 }
 

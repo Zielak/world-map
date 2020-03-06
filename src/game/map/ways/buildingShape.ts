@@ -1,4 +1,4 @@
-import { MapWay } from '../ways'
+import { MapWay } from './ways'
 
 export const determineBuildingHeight = (way: MapWay): number => {
   // TODO: make use of general shape size to determine height.

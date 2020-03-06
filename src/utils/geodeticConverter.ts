@@ -41,6 +41,7 @@ const kSemiMinorAxis = 6356752.3142
 const kFirstEccentricitySquared = 6.69437999014 * 0.001
 const kSecondEccentricitySquared = 6.73949674228 * 0.001
 const kFlattening = 1 / 298.257223563
+const TWOPI = 6.2831853071795865
 
 class GeodeticConverter {
   initial_latitude_: number
@@ -86,7 +87,12 @@ class GeodeticConverter {
       )
     )
 
+    // Fix by: https://github.com/ethz-asl/geodetic_utils/issues/36
     this.ecef_to_ned_matrix_ = this.nRe(phiP, this.initial_longitude_)
+    // this.ecef_to_ned_matrix_ = this.nRe(
+    //   this.initial_latitude_,
+    //   this.initial_longitude_
+    // )
     this.ned_to_ecef_matrix_ = this.nRe(
       this.initial_latitude_,
       this.initial_longitude_
@@ -281,6 +287,31 @@ class GeodeticConverter {
     const { x, y, z } = this.ned2Ecef(aux_north, aux_east, aux_down)
 
     return this.ecef2Geodetic(x, y, z)
+  }
+
+  distanceTo(latitude: number, longitude: number, altitude: number = 0) {
+    const { x, y, z } = this.geodetic2Ecef(latitude, longitude, altitude)
+    const local = new Vector3(
+      this.initial_ecef_x_,
+      this.initial_ecef_y_,
+      this.initial_ecef_z_
+    )
+    return local.distanceTo(new Vector3(x, y, z))
+  }
+
+  bearingTo(latitude: number, longitude: number, altitude: number = 0) {
+    if (latitude === 0 && longitude === 0) return 0
+
+    const b = this.geodetic2Ecef(latitude, longitude, altitude)
+    const a = new Vector3(
+      this.initial_ecef_x_,
+      this.initial_ecef_y_,
+      this.initial_ecef_z_
+    )
+
+    let theta = Math.atan2(b.x - a.x, a.z - b.z)
+    if (theta < 0.0) theta += TWOPI
+    return theta
   }
 
   private nRe(lat_radians: number, lon_radians: number): Matrix3 {

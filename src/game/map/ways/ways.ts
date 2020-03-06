@@ -1,6 +1,7 @@
-import { MapBounds } from './bounds'
-import { MapNode, MapNodeList } from './nodes'
-import { simplifyTags } from './tags'
+import { MapBounds } from '../bounds'
+import { simplifyTags } from '../tags'
+
+import { MapNode, MapNodeList } from '../nodes/nodes'
 
 export class MapWay {
   tags: MapTags
@@ -42,10 +43,12 @@ const tagsWhitelist = [
   // 'crossing',
   'highway',
   // 'lanes',
-  'amenity'
+  'amenity',
   // 'barrier',
   // 'landuse',
   // 'surface'
+  'waterway',
+  'test'
 ]
 const tagsValuesBlacklist = new Map([['highway', ['footway']]])
 

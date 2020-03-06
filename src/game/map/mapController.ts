@@ -1,14 +1,13 @@
-import {
-  bearingBetweenCoords,
-  distanceBetweenCoords
-} from '../../utils/coordinates'
+import { bearingBetweenCoords } from '../../utils/coordinates'
 
 import { Renderer } from '../renderer'
 
 import { MapBounds } from './bounds'
-import { MapNode } from './nodes'
+import { MapNode } from './nodes/nodes'
 import { MapSector, isBottomSector, LEVELS, MapSectorBottom } from './mapSector'
-import { MapWay } from './ways'
+import { MapWay } from './ways/ways'
+import { rad2deg, decimal } from '../../utils/numbers'
+import { ParsedMapData } from './osmXmlParser'
 
 export const isPolygon = (way: MapWay) =>
   way.nodes[0] === way.nodes[way.nodes.length - 1]
@@ -34,6 +33,11 @@ class MapController {
       idx: 1,
       bounds: new MapBounds(-90, 0, 90, 180)
     })
+  }
+
+  addNewData(data: ParsedMapData) {
+    data.nodesMap?.forEach(this.addNode, this)
+    data.waysMap?.forEach(this.addWay, this)
   }
 
   addNode(node: MapNode) {
@@ -62,7 +66,7 @@ class MapController {
    * @param lat
    * @param lon
    */
-  getNeighborsForCoords(lat: number, lon: number) {
+  getNeighborsForCoords(lat: number, lon: number): MapSectorBottom[] {
     const { sectors } = this
     const d = LEVELS[LEVELS.length - 1]
 
@@ -112,75 +116,51 @@ class MapController {
     ]
   }
 
-  /**
-   * Put all known things to 3D space scene
-   * @param renderer
-   */
-  bake(renderer: Renderer, lat: number, lon: number) {
-    const chunk = this.getNeighborsForCoords(lat, lon)
-    const [targetSector] = chunk
-    // const chunk = sectors
-    //   .getAllSectorsByLevel(14)
-    console.debug('BAKE: sectors to bake:', chunk.length)
+  layDownSectors(
+    targetSector: MapSectorBottom,
+    restSectors: MapSectorBottom[]
+  ) {
+    if (restSectors.length > 100) {
+      throw new Error(
+        `layDown ${restSectors.length} sectors? This must be a mistake. Don't place more than you can chew.`
+      )
+    }
+    console.debug(
+      '--- layDownSectors. position',
+      targetSector.transformNode.position.x,
+      targetSector.transformNode.position.z
+    )
 
-    chunk
-      .map(sector => {
-        if (sector === targetSector) return sector
+    restSectors.map(sector => {
+      console.debug(
+        `=== sector ${sector.id} === ${sector.ways.length} ways, ${sector.nodes.length} nodes`
+      )
+      console.debug('\tsize by nodes:', sector.sizeByNodes)
+      // Prepare sectors
+      // FIXME: ADD distance between sectors, from lat/lon difference
+      const distance = targetSector.geoConv.distanceTo(
+        sector.bounds.centerLat,
+        sector.bounds.centerLon
+      )
+      const bearing = targetSector.geoConv.bearingTo(
+        sector.bounds.centerLat,
+        sector.bounds.centerLon
+      )
 
-        // Prepare sectors
-        // FIXME: ADD distance between sectors, from lat/lon difference
-        const distance = distanceBetweenCoords(
-          lat,
-          lon,
-          sector.bounds.centerLat,
-          sector.bounds.centerLon
-        )
-        const bearing = bearingBetweenCoords(
-          lat,
-          lon,
-          sector.bounds.centerLat,
-          sector.bounds.centerLon
-        )
-        const newPos = targetSector.renderedRef.position.clone()
-        newPos.x += Math.cos(bearing) * distance
-        newPos.z += Math.sin(bearing) * distance
+      const newPos = targetSector.transformNode.position.clone()
+      newPos.x += Math.cos(bearing) * distance
+      newPos.y = 0
+      newPos.z += Math.sin(bearing) * distance
 
-        sector.renderedRef.position.copyFrom(newPos)
+      sector.transformNode.position.copyFrom(newPos)
 
-        return sector
-      })
-      .map(sector => {
-        // Dump nodes
-        if (isBottomSector(sector)) {
-          sector.nodes.forEach(node => {
-            node.render(renderer)
-          })
-        }
-
-        // Dump ways
-        // FIXME: Ways should rely on positions of already present nodes and their PARSED positions.
-        // Way's nodes may be in other sectors, need to account for that.
-        sector.ways.forEach(way => {
-          let material
-          switch (sector.idx) {
-            case 0:
-              material = 'terrain0'
-              break
-            case 1:
-              material = 'terrain1'
-              break
-            case 2:
-              material = 'terrain2'
-              break
-            case 3:
-              material = 'terrain3'
-              break
-          }
-          if (sector === targetSector) material = 'building'
-
-          way.renderedRef = renderer.addPolygonWay(way, material)
-        })
-      })
+      console.debug('\tposition', newPos.x, newPos.z)
+      console.debug(
+        '\tfrom target:',
+        decimal(distance, 2),
+        decimal(rad2deg(bearing), 2)
+      )
+    })
   }
 }
 

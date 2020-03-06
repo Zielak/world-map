@@ -1,15 +1,26 @@
 import { parse } from 'fast-xml-parser'
-import { parseNode, MapNodeList } from './nodes'
-import { parseWay, filterWays, MapWayList, MapWay } from './ways'
+
+import { measureFrom, measureTo } from '../../utils/benchmark'
+
+import { parseNode, MapNodeList } from './nodes/nodes'
+import { parseWay, filterWays, MapWayList, MapWay } from './ways/ways'
 import { parseBounds, MapBounds } from './bounds'
 
-export const parseOSMXml = (xml: string) => {
+export type ParsedMapData = {
+  bounds: MapBounds
+  nodesMap: MapNodeList
+  waysMap: MapWayList
+}
+
+export const parseOSMXml = (xml: string): ParsedMapData => {
+  measureFrom('parseOSMXml_parser')
   const data = parse(xml, {
     attributeNamePrefix: '$_',
     arrayMode: true,
     ignoreAttributes: false,
     parseAttributeValue: true
   })
+  measureTo('parseOSMXml_parser')
 
   const bounds: MapBounds = parseBounds(data.osm[0].bounds[0])
 

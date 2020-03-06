@@ -21,12 +21,6 @@ const getPlugins = env => {
   ]
 
   if (!env.production) {
-    // plugins.unshift(
-    //   new webpack.SourceMapDevToolPlugin({
-    //     filename: '[file].map',
-    //     append: '\n//# sourceMappingURL=[url]'
-    //   })
-    // )
     plugins.push(
       new CopyWebpackPlugin([
         {

@@ -2,7 +2,10 @@ import { Renderer } from './renderer'
 import { TerrainController } from './terrain/terrainController'
 import { parseOSMXml } from './map/osmXmlParser'
 import { MapController } from './map/mapController'
-import { Vector3 } from '@babylonjs/core'
+import { Vector2 } from '@babylonjs/core'
+import { MapWay } from './map/ways/ways'
+import { MapSectorBottom } from './map/mapSector'
+import { measureFrom, measureTo } from '../utils/benchmark'
 
 const renderer = new Renderer()
 
@@ -17,34 +20,106 @@ const renderer = new Renderer()
 // )
 const mapController = new MapController()
 
+const playerPosition = new Vector2(0, 0)
+
 window['viewport'] = renderer
 // window['terrain'] = terrainController
 window['map'] = mapController
 
+// TODO: continuous map fetching
 fetch((document.location.search.slice(1) || 'pogonKosciol') + '.osm')
   .then(data => data.text())
-  .then(function onFetchMapData(string) {
-    const mapData = parseOSMXml(string)
+  .then(parseOSMXml)
+  .then(mapData => {
+    mapController.addNewData(mapData)
+    playerPosition.set(mapData.bounds.centerLat, mapData.bounds.centerLon)
+    return mapData
+  })
+  .then(function handleMapData(mapData) {
+    measureFrom('getNeighborsForCoords')
+    // TODO: This methods picks stuff only from the most bottom sectors
+    // TODO: I'm missing ways placed in upper levels!
+    const allNeighbors = mapController.getNeighborsForCoords(
+      playerPosition.x,
+      playerPosition.y
+    )
+    measureTo('getNeighborsForCoords')
+    const [targetSector] = allNeighbors
 
-    renderer.addNode('test', new Vector3(0, -10, 0))
-    renderer.addNode('test', new Vector3(0, 10, 0))
+    // Expand sector selection to grab all nodes of ways,
+    // which overflow currently selected sectors
+    // We need this, so these sectors get initialized and have their position
+    // set in 3D space
+    measureFrom(`moreSectors`)
+    const moreSectors = allNeighbors.reduce((more, currentSector) => {
+      const overflowingWays = currentSector.nodes
+        .filter(node => node.inWay)
+        .reduce((ways, node) => {
+          node.wayRefs.forEach(way => {
+            // See if this way's other nodes overflow current sector
+            if (way.nodes.some(node => node.sector !== currentSector)) {
+              ways.push(way)
+            }
+          })
+          return ways
+        }, [] as MapWay[])
 
-    mapData.nodesMap?.forEach(function addEachNode(node) {
-      mapController.addNode(node)
+      // Get the list of sectors which contain overflowing nodes
+      const moreSectors = overflowingWays.reduce(
+        (result, way) => result.concat(way.nodes.map(node => node.sector)),
+        [] as MapSectorBottom[]
+      )
+
+      return more.concat(moreSectors)
+    }, [] as MapSectorBottom[])
+    measureTo(`moreSectors`)
+
+    allNeighbors.push(
+      ...new Set(moreSectors.filter(sec => !allNeighbors.includes(sec)))
+    )
+
+    console.debug('sectors to bake:', allNeighbors.length)
+
+    // 1. place these lat/lon sectors in 3D space
+    mapController.layDownSectors(targetSector, allNeighbors.slice(1))
+
+    // === Renderer decides if nodes and ways are "worthy" to be put in game space
+    // === Proc gen methods are used to determine their "value"
+    // === All data regarding nodes and ways are still preserved in mapController
+
+    // 2. For each way, place it whole in 3D space
+    allNeighbors.forEach(sector => {
+      const isTargetSector = sector === targetSector
+
+      sector.ways.forEach(way => {
+        way.renderedRef = renderer.addPolygonWay(
+          way,
+          isTargetSector ? 'building' : 'terrain' + sector.idx
+        )
+      })
     })
 
-    mapData.waysMap?.forEach(function addEachWay(way) {
-      mapController.addWay(way)
+    // 3. For each standalone node, place it in 3D space
+    allNeighbors.forEach(sector => {
+      const isTargetSector = sector === targetSector
+
+      sector.nodes.forEach(node => {
+        if (node.standalone) {
+          node.renderedRef = renderer.addNode(
+            node,
+            isTargetSector ? 'node' : 'grid' + sector.idx
+          )
+        }
+      })
     })
 
     // Put all that data to Renderer, sector by sector
-    mapController.bake(
-      renderer,
-      mapData.bounds.centerLat,
-      mapData.bounds.centerLon
-    )
-
-    window['mapRaw'] = mapData
+    renderer
+    // mapController.bake(
+    //   renderer,
+    //   mapData.bounds.centerLat,
+    //   mapData.bounds.centerLon
+    // )
   })
 
 /*
