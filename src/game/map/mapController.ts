@@ -130,10 +130,23 @@ class MapController {
       targetSector.transformNode.position.x,
       targetSector.transformNode.position.z
     )
+    console.debug('IDX: 0=Blue, 1=Green, 2=Yellow, 3=Pink')
+
+    console.debug(
+      `=== sector ${targetSector.id}[${targetSector.idx}] === ${targetSector.ways.length} ways, ${targetSector.nodes.length} nodes`,
+      targetSector.bounds
+    )
+    console.debug('\tsize by nodes:', targetSector.sizeByNodes)
+    console.debug(
+      '\tposition',
+      decimal(targetSector.position.x, 6),
+      decimal(targetSector.position.z, 6)
+    )
 
     restSectors.map(sector => {
       console.debug(
-        `=== sector ${sector.id} === ${sector.ways.length} ways, ${sector.nodes.length} nodes`
+        `=== sector ${sector.id}[${sector.idx}] === ${sector.ways.length} ways, ${sector.nodes.length} nodes`,
+        sector.bounds
       )
       console.debug('\tsize by nodes:', sector.sizeByNodes)
       // Prepare sectors
@@ -154,7 +167,7 @@ class MapController {
 
       sector.transformNode.position.copyFrom(newPos)
 
-      console.debug('\tposition', newPos.x, newPos.z)
+      console.debug('\tposition', decimal(newPos.x, 6), decimal(newPos.z, 6))
       console.debug(
         '\tfrom target:',
         decimal(distance, 2),

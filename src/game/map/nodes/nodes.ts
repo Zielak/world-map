@@ -56,8 +56,8 @@ export class MapNode {
 
     // parse node's position, relative to sector
     const { east, north, up } = sector.geoConv.geodetic2Enu(
-      this.lat - sector.bounds.centerLat,
-      this.lon - sector.bounds.centerLon,
+      this.lat,
+      this.lon,
       0
     )
     this.relativePosition = new Vector3(east, up, north)

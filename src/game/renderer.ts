@@ -14,6 +14,8 @@ import { GridMaterial } from '@babylonjs/materials/grid'
 // Required side effects to populate the Create methods on the mesh class. Without this, the bundle would be smaller but the createXXX methods from mesh would not be accessible.
 import '@babylonjs/core/Meshes/meshBuilder'
 
+import { decimal } from '../utils/numbers'
+
 import { MapNode } from './map/nodes/nodes'
 import { MapWay } from './map/ways/ways'
 import { determineBuildingHeight } from './map/ways/buildingShape'
@@ -171,12 +173,21 @@ class Renderer {
     if ('building' in way.tags && !buildingStillExists(way)) return
 
     const points = way.nodes.slice(0, -1).map(node => {
+      const _sectorPos = node.sector.position.clone()
+      _sectorPos.x = decimal(_sectorPos.x, 6)
+      _sectorPos.y = decimal(_sectorPos.y, 6)
+      _sectorPos.z = decimal(_sectorPos.z, 6)
+      const _nodePos = node.relativePosition.clone()
+      _nodePos.x = decimal(_nodePos.x, 6)
+      _nodePos.y = decimal(_nodePos.y, 6)
+      _nodePos.z = decimal(_nodePos.z, 6)
+
       console.log(
         'way' + way.id,
         'sec' + node.sector.id,
-        node.sector.position,
+        _sectorPos,
         'node' + node.id,
-        node.relativePosition
+        _nodePos
       )
       const { x, z } = node.relativePosition.subtract(node.sector.position)
       return new Vector2(x, z)

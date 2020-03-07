@@ -7,23 +7,6 @@ export const middle = (valA: number, valB: number): number => {
 }
 
 /**
- * @deprecated
- * Is provided value between two given numbers?
- * `a` and `b` don't have to be in order.
- * @param value
- * @param a
- * @param b
- */
-// export const isWithin = (value: number, a: number, b: number): boolean => {
-//   if (a < b) {
-//     return a < value && value < b
-//   } else if (a > b) {
-//     return b < value && value < a
-//   }
-//   return value === a && value === b
-// }
-
-/**
  * Limits the number of digits "after comma"
  */
 export const decimal = (value: number, maxZeroes = 2): number => {
