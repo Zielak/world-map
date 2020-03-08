@@ -151,24 +151,31 @@ class Renderer {
   }
 
   debugSector(sector: MapSectorBottom) {
-    const size = sector.sizeByNodes
-    const ground = MeshBuilder.CreateGround(
-      `ground${sector.id}`,
-      { height: size.z, width: size.x, subdivisions: 4 },
-      this.scene
-    )
+    const { minLat, minLon, maxLat, maxLon } = sector.bounds
+    const convert = ({ east, north }) => ({ x: east, y: north })
+    const PAD = 0.0001
+    const points = [
+      convert(sector.geoConv.geodetic2Enu(minLat + PAD, minLon + PAD, 0)),
+      convert(sector.geoConv.geodetic2Enu(minLat + PAD, maxLon - PAD, 0)),
+      convert(sector.geoConv.geodetic2Enu(maxLat - PAD, maxLon - PAD, 0)),
+      convert(sector.geoConv.geodetic2Enu(maxLat - PAD, minLon + PAD, 0))
+    ]
+      .map(point => new Vector2(point.x, point.y))
+      .map(v => {
+        v.x += sector.position.x
+        v.y += sector.position.z
+        return v
+      })
 
-    console.groupCollapsed('debugSector')
-    ground.setParent(sector.transformNode)
-    ground.position.set(0, 0, 0)
-    ground.setMaterialByID(`wire${sector.idx}`)
-    console.log(
-      'sector' + sector.id,
-      sector.transformNode.position,
-      sector.transformNode.absolutePosition
+    const polygonTriangulation = new PolygonMeshBuilder(
+      'sectorDebug' + sector.id,
+      points,
+      this.scene,
+      earcut
     )
-    console.log('ground parent set', ground.position, ground.absolutePosition)
-    console.groupEnd()
+    const polygon = polygonTriangulation.build(false, 100)
+    polygon.setMaterialByID('wire' + sector.idx)
+    polygon.position.y = -50
   }
 
   addNode(node: MapNode, materialID: string = 'building') {
@@ -190,30 +197,12 @@ class Renderer {
     }
   }
 
-  addTestNode(
-    nodeId,
-    position: Vector3,
-    size: number = 2,
-    materialID: string = 'building'
-  ) {
-    // console.log('RENDERER:', `add node ${nodeId} at`, x, y, z)
-    const nodeBox = MeshBuilder.CreateBox(
-      `node_${nodeId}`,
-      { size },
-      this.scene
-    )
-    nodeBox.position.copyFrom(position)
-    nodeBox.setMaterialByID(materialID)
-
-    return nodeBox
-  }
-
   addPolygonWay(way: MapWay, materialID: string = 'building') {
     // FIXME: Ways should rely on positions of already present nodes and their PARSED positions.
     // Way's nodes may be in other sectors, need to account for that.
     if ('building' in way.tags && !buildingStillExists(way)) return
 
-    console.group('addPolygonWay')
+    // console.groupCollapsed('addPolygonWay')
     const points = way.nodes.slice(0, -1).map(node => {
       const _sectorPos = node.sector.position.clone()
       _sectorPos.x = decimal(_sectorPos.x, 6)
@@ -224,14 +213,14 @@ class Renderer {
       _nodePos.y = decimal(_nodePos.y, 6)
       _nodePos.z = decimal(_nodePos.z, 6)
 
-      console.log(
-        'way' + way.id,
-        'sec' + node.sector.id,
-        _sectorPos,
-        'node' + node.id,
-        _nodePos
-      )
-      const { x, z } = node.relativePosition.subtract(node.sector.position)
+      // console.log(
+      //   'way' + way.id,
+      //   'sec' + node.sector.id,
+      //   _sectorPos,
+      //   'node' + node.id,
+      //   _nodePos
+      // )
+      const { x, z } = node.relativePosition.add(node.sector.position)
       return new Vector2(x, z)
     })
 
@@ -244,9 +233,9 @@ class Renderer {
     const height = determineBuildingHeight(way)
     const polygon = polygonTriangulation.build(false, height)
     polygon.setMaterialByID(materialID)
-    polygon.position.y = height + way.id * 4
+    polygon.position.y = height
 
-    console.groupEnd()
+    // console.groupEnd()
     return polygon
   }
 }

@@ -39,5 +39,5 @@ export const buildingStillExists = (way: MapWay): boolean => {
     score += 2
   }
 
-  return byId + score >= 1.3
+  return byId + score >= 0.5
 }

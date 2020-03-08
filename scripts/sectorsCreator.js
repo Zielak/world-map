@@ -4,10 +4,10 @@ const SCALE = 0.25
 const SIZE = 0.02197265625 * SCALE
 const PAD = 0.0001
 
-const minLatSector = 0
-const minLonSector = 0
+const minLatSector = -8
+const minLonSector = -8
 const maxLatSector = 8
-const maxLonSector = 2
+const maxLonSector = 8
 
 // ====================
 

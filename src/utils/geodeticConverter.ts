@@ -315,7 +315,7 @@ class GeodeticConverter {
 
     let theta = Math.atan2(b.x - a.x, a.y - b.y)
     if (theta < 0.0) theta += TWOPI
-    return theta
+    return theta - Math.PI / 2
   }
 
   private nRe(lat_radians: number, lon_radians: number): Matrix3 {

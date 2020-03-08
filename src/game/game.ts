@@ -31,7 +31,7 @@ window['map'] = mapController
 fetch((document.location.search.slice(1) || 'pogonKosciol') + '.osm')
   .then(data => data.text())
   .then(parseOSMXml)
-  .then(mapData => {
+  .then(function pushDataToMapController(mapData) {
     mapController.addNewData(mapData)
     playerPosition.set(mapData.bounds.centerLat, mapData.bounds.centerLon)
     return mapData
@@ -81,14 +81,6 @@ fetch((document.location.search.slice(1) || 'pogonKosciol') + '.osm')
 
     console.debug('sectors to bake:', allNeighbors.length)
 
-    allNeighbors.forEach(sector => {
-      const _sectorPos = sector.position.clone()
-      _sectorPos.x = decimal(_sectorPos.x, 6)
-      _sectorPos.y = decimal(_sectorPos.y, 6)
-      _sectorPos.z = decimal(_sectorPos.z, 6)
-      console.log('sec' + sector.id, _sectorPos)
-    })
-
     // 1. place these lat/lon sectors in 3D space
     mapController.layDownSectors(targetSector, allNeighbors.slice(1))
 
@@ -100,13 +92,12 @@ fetch((document.location.search.slice(1) || 'pogonKosciol') + '.osm')
     allNeighbors.forEach(sector => {
       const isTargetSector = sector === targetSector
 
-      // renderer.debugSector(sector)
+      renderer.debugSector(sector)
 
       sector.ways.forEach(way => {
         way.renderedRef = renderer.addPolygonWay(
           way,
-          way.id % 2 ? 'wire' + sector.idx : 'grid' + sector.idx
-          // isTargetSector ? 'building' : 'terrain' + sector.idx
+          isTargetSector ? 'building' : 'terrain' + sector.idx
         )
       })
     })

@@ -125,30 +125,31 @@ class MapController {
         `layDown ${restSectors.length} sectors? This must be a mistake. Don't place more than you can chew.`
       )
     }
-    // console.debug(
-    //   '--- layDownSectors. position',
-    //   targetSector.transformNode.position.x,
-    //   targetSector.transformNode.position.z
-    // )
-    // console.debug('IDX: 0=Blue, 1=Green, 2=Yellow, 3=Pink')
+    console.groupCollapsed(
+      'layDownSectors, position',
+      targetSector.transformNode.position.x,
+      targetSector.transformNode.position.z
+    )
+    console.debug('IDX: 0=Blue, 1=Green, 2=Yellow, 3=Pink')
 
-    // console.debug(
-    //   `=== sector ${targetSector.id}[${targetSector.idx}] === ${targetSector.ways.length} ways, ${targetSector.nodes.length} nodes`,
-    //   targetSector.bounds
-    // )
-    // console.debug('\tsize by nodes:', targetSector.sizeByNodes)
-    // console.debug(
-    //   '\tposition',
-    //   decimal(targetSector.position.x, 6),
-    //   decimal(targetSector.position.z, 6)
-    // )
+    console.group(
+      `sector ${targetSector.id}[${targetSector.idx}], ${targetSector.ways.length} ways, ${targetSector.nodes.length} nodes`
+    )
+    console.debug('\tbounds:', targetSector.bounds)
+    console.debug('\tsize by nodes:', targetSector.sizeByNodes)
+    console.debug(
+      '\tposition',
+      decimal(targetSector.position.x, 6),
+      decimal(targetSector.position.z, 6)
+    )
+    console.groupEnd()
 
     restSectors.map(sector => {
-      // console.debug(
-      //   `=== sector ${sector.id}[${sector.idx}] === ${sector.ways.length} ways, ${sector.nodes.length} nodes`,
-      //   sector.bounds
-      // )
-      // console.debug('\tsize by nodes:', sector.sizeByNodes)
+      console.group(
+        `sector ${sector.id}[${sector.idx}], ${sector.ways.length} ways, ${sector.nodes.length} nodes`
+      )
+      console.debug('\tbounds:', sector.bounds)
+      console.debug('\tsize by nodes:', sector.sizeByNodes)
 
       // Prepare sectors
       const distance = targetSector.geoConv.distanceTo(
@@ -167,13 +168,15 @@ class MapController {
 
       sector.transformNode.position.copyFrom(newPos)
 
-      // console.debug('\tposition', decimal(newPos.x, 6), decimal(newPos.z, 6))
-      // console.debug(
-      //   '\tfrom target:',
-      //   decimal(distance, 2),
-      //   decimal(rad2deg(bearing), 2)
-      // )
+      console.debug('\tposition', decimal(newPos.x, 6), decimal(newPos.z, 6))
+      console.debug(
+        '\tfrom target:',
+        decimal(distance, 2),
+        decimal(rad2deg(bearing), 2)
+      )
+      console.groupEnd()
     })
+    console.groupEnd()
   }
 }
 
