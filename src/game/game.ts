@@ -6,6 +6,7 @@ import { Vector2 } from '@babylonjs/core'
 import { MapWay } from './map/ways/ways'
 import { MapSectorBottom } from './map/mapSector'
 import { measureFrom, measureTo } from '../utils/benchmark'
+import { decimal } from '../utils/numbers'
 
 const renderer = new Renderer()
 
@@ -80,6 +81,14 @@ fetch((document.location.search.slice(1) || 'pogonKosciol') + '.osm')
 
     console.debug('sectors to bake:', allNeighbors.length)
 
+    allNeighbors.forEach(sector => {
+      const _sectorPos = sector.position.clone()
+      _sectorPos.x = decimal(_sectorPos.x, 6)
+      _sectorPos.y = decimal(_sectorPos.y, 6)
+      _sectorPos.z = decimal(_sectorPos.z, 6)
+      console.log('sec' + sector.id, _sectorPos)
+    })
+
     // 1. place these lat/lon sectors in 3D space
     mapController.layDownSectors(targetSector, allNeighbors.slice(1))
 
@@ -91,10 +100,13 @@ fetch((document.location.search.slice(1) || 'pogonKosciol') + '.osm')
     allNeighbors.forEach(sector => {
       const isTargetSector = sector === targetSector
 
+      // renderer.debugSector(sector)
+
       sector.ways.forEach(way => {
         way.renderedRef = renderer.addPolygonWay(
           way,
-          isTargetSector ? 'building' : 'terrain' + sector.idx
+          way.id % 2 ? 'wire' + sector.idx : 'grid' + sector.idx
+          // isTargetSector ? 'building' : 'terrain' + sector.idx
         )
       })
     })

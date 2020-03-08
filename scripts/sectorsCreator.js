@@ -1,8 +1,17 @@
 const clipboardy = require('clipboardy')
 
-const SIZE = 0.02197265625
-const PAD = 0.000001
+const SCALE = 0.25
+const SIZE = 0.02197265625 * SCALE
+const PAD = 0.0001
 
+const minLatSector = 0
+const minLonSector = 0
+const maxLatSector = 8
+const maxLonSector = 2
+
+// ====================
+
+const sectors = []
 let id = 0
 
 /**
@@ -48,15 +57,9 @@ function makeWay(nodes) {
 }
 
 // ===========================
-const minLatSector = -1
-const minLonSector = -1
-const maxLatSector = 0
-const maxLonSector = 0
 
-const sectors = []
-
-for (let latS = minLatSector; latS <= maxLatSector; latS++) {
-  for (let lonS = minLonSector; lonS <= maxLonSector; lonS++) {
+for (let latS = minLatSector; latS < maxLatSector; latS++) {
+  for (let lonS = minLonSector; lonS < maxLonSector; lonS++) {
     sectors.push(createSector(latS, lonS))
   }
 }

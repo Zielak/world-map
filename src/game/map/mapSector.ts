@@ -335,8 +335,11 @@ export class MapSectorBottom extends MapSector {
 
         return res
       },
-      { minX: 0, minZ: 0, maxX: 0, maxZ: 0 }
+      { minX: 0, minZ: 0, maxX: 0, maxZ: 0, x: 0, z: 0 }
     )
+
+    sizeByNodes.x = Math.abs(sizeByNodes.minX - sizeByNodes.maxX)
+    sizeByNodes.z = Math.abs(sizeByNodes.minZ - sizeByNodes.maxZ)
 
     return sizeByNodes
   }

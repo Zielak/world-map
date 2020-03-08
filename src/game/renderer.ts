@@ -20,6 +20,7 @@ import { MapNode } from './map/nodes/nodes'
 import { MapWay } from './map/ways/ways'
 import { determineBuildingHeight } from './map/ways/buildingShape'
 import { buildingStillExists } from './map/ways/building'
+import { MapSectorBottom } from './map/mapSector'
 
 class Renderer {
   canvas: HTMLCanvasElement
@@ -53,44 +54,63 @@ class Renderer {
     light.intensity = 0.8
     light.specular = new Color3(0.1, 0.3, 0.7)
 
-    // Blue
+    const blue = new Color3(0, 1, 1)
+    const blue2 = new Color3(0, 0.5, 0.5)
+    const green = new Color3(0, 1, 0)
+    const green2 = new Color3(0, 0.5, 0)
+    const yellow = new Color3(1, 1, 0)
+    const yellow2 = new Color3(0.5, 0.5, 0)
+    const pink = new Color3(1, 0, 1)
+    const pink2 = new Color3(0.5, 0, 0.5)
+
+    const white = new Color3(1, 1, 1)
+
     const gridMaterial = new GridMaterial('grid0', scene)
-    gridMaterial.lineColor = new Color3(0, 1, 1)
-    gridMaterial.mainColor = new Color3(0, 0.5, 0.5)
+    gridMaterial.lineColor = blue
+    gridMaterial.mainColor = blue2
 
-    // Green
     const gridMaterial1 = new GridMaterial('grid1', scene)
-    gridMaterial1.lineColor = new Color3(0, 1, 0)
-    gridMaterial1.mainColor = new Color3(0, 0.5, 0)
+    gridMaterial1.lineColor = green
+    gridMaterial1.mainColor = green2
 
-    // Yellow
     const gridMaterial2 = new GridMaterial('grid2', scene)
-    gridMaterial2.lineColor = new Color3(1, 1, 0)
-    gridMaterial2.mainColor = new Color3(0.5, 0.5, 0)
+    gridMaterial2.lineColor = yellow
+    gridMaterial2.mainColor = yellow2
 
-    // Pink
     const gridMaterial3 = new GridMaterial('grid3', scene)
-    gridMaterial3.lineColor = new Color3(1, 0, 1)
-    gridMaterial3.mainColor = new Color3(0.5, 0, 0.5)
+    gridMaterial3.lineColor = pink
+    gridMaterial3.mainColor = pink2
 
-    // Blue
+    const wire1 = new StandardMaterial('wire0', scene)
+    wire1.diffuseColor = blue
+    wire1.wireframe = true
+
+    const wire2 = new StandardMaterial('wire1', scene)
+    wire2.diffuseColor = green
+    wire2.wireframe = true
+
+    const wire3 = new StandardMaterial('wire2', scene)
+    wire3.diffuseColor = yellow
+    wire3.wireframe = true
+
+    const wire4 = new StandardMaterial('wire3', scene)
+    wire4.diffuseColor = pink
+    wire4.wireframe = true
+
     const mat1 = new StandardMaterial('terrain0', scene)
-    mat1.diffuseColor = new Color3(0, 1, 1)
+    mat1.diffuseColor = blue
 
-    // Green
     const mat2 = new StandardMaterial('terrain1', scene)
-    mat2.diffuseColor = new Color3(0, 1, 0)
+    mat2.diffuseColor = green
 
-    // Yellow
     const mat3 = new StandardMaterial('terrain2', scene)
-    mat3.diffuseColor = new Color3(1, 1, 0)
+    mat3.diffuseColor = yellow
 
-    // Pink
     const mat4 = new StandardMaterial('terrain3', scene)
-    mat4.diffuseColor = new Color3(1, 0, 1)
+    mat4.diffuseColor = pink
 
     const node = new StandardMaterial('node', scene)
-    node.diffuseColor = new Color3(1, 1, 1)
+    node.diffuseColor = white
 
     const highway = new StandardMaterial('highway', scene)
     highway.diffuseColor = new Color3(0.301, 0.329, 0.353)
@@ -130,6 +150,27 @@ class Renderer {
     camera.keysRight = [39, 68]
   }
 
+  debugSector(sector: MapSectorBottom) {
+    const size = sector.sizeByNodes
+    const ground = MeshBuilder.CreateGround(
+      `ground${sector.id}`,
+      { height: size.z, width: size.x, subdivisions: 4 },
+      this.scene
+    )
+
+    console.groupCollapsed('debugSector')
+    ground.setParent(sector.transformNode)
+    ground.position.set(0, 0, 0)
+    ground.setMaterialByID(`wire${sector.idx}`)
+    console.log(
+      'sector' + sector.id,
+      sector.transformNode.position,
+      sector.transformNode.absolutePosition
+    )
+    console.log('ground parent set', ground.position, ground.absolutePosition)
+    console.groupEnd()
+  }
+
   addNode(node: MapNode, materialID: string = 'building') {
     // if (this.standalone) {
     if (node.tags?.test === 'yes') {
@@ -140,12 +181,12 @@ class Renderer {
         { size },
         this.scene
       )
+      // I have to assume the sector this node is in, is already "rendered" in 3D space
+      nodeBox.setParent(node.sector.transformNode)
       nodeBox.position.copyFrom(node.relativePosition)
       nodeBox.setMaterialByID(materialID)
 
       node.renderedRef = nodeBox
-      // I have to assume the sector this node is in, is already "rendered" in 3D space
-      node.renderedRef.parent = node.sector.transformNode
     }
   }
 
@@ -172,6 +213,7 @@ class Renderer {
     // Way's nodes may be in other sectors, need to account for that.
     if ('building' in way.tags && !buildingStillExists(way)) return
 
+    console.group('addPolygonWay')
     const points = way.nodes.slice(0, -1).map(node => {
       const _sectorPos = node.sector.position.clone()
       _sectorPos.x = decimal(_sectorPos.x, 6)
@@ -202,8 +244,9 @@ class Renderer {
     const height = determineBuildingHeight(way)
     const polygon = polygonTriangulation.build(false, height)
     polygon.setMaterialByID(materialID)
-    polygon.position.y = height
+    polygon.position.y = height + way.id * 4
 
+    console.groupEnd()
     return polygon
   }
 }

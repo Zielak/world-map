@@ -2,6 +2,7 @@ import { Matrix3 } from 'three/src/math/Matrix3'
 import { Vector3 } from 'three/src/math/Vector3'
 
 import { deg2rad, rad2deg } from './numbers'
+import { Vector2 } from 'three/src/math/Vector2'
 
 /**
 BSD 3 - Clause License
@@ -290,26 +291,29 @@ class GeodeticConverter {
   }
 
   distanceTo(latitude: number, longitude: number, altitude: number = 0) {
-    const { x, y, z } = this.geodetic2Ecef(latitude, longitude, altitude)
-    const local = new Vector3(
-      this.initial_ecef_x_,
-      this.initial_ecef_y_,
-      this.initial_ecef_z_
-    )
-    return local.distanceTo(new Vector3(x, y, z))
+    const { east, north, up } = this.geodetic2Enu(latitude, longitude, altitude)
+    // const local = new Vector3(
+    //   this.initial_ecef_x_,
+    //   this.initial_ecef_y_,
+    //   this.initial_ecef_z_
+    // )
+    return new Vector3(east, north, up).length()
   }
 
   bearingTo(latitude: number, longitude: number, altitude: number = 0) {
-    if (latitude === 0 && longitude === 0) return 0
+    if (
+      latitude === this.initial_latitude_ &&
+      longitude === this.initial_longitude_
+    ) {
+      return 0
+    }
 
-    const b = this.geodetic2Ecef(latitude, longitude, altitude)
-    const a = new Vector3(
-      this.initial_ecef_x_,
-      this.initial_ecef_y_,
-      this.initial_ecef_z_
-    )
+    const { east, north } = this.geodetic2Enu(latitude, longitude, altitude)
 
-    let theta = Math.atan2(b.x - a.x, a.z - b.z)
+    const b = new Vector2(east, north)
+    const a = new Vector2(0, 0)
+
+    let theta = Math.atan2(b.x - a.x, a.y - b.y)
     if (theta < 0.0) theta += TWOPI
     return theta
   }
