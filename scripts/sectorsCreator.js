@@ -1,13 +1,16 @@
 const clipboardy = require('clipboardy')
 
-const SCALE = 0.25
-const SIZE = 0.02197265625 * SCALE
-const PAD = 0.0001
+const argv = process.argv.filter((_, idx) => idx >= 2)
+const minLatSector = parseFloat(argv[0]) || -1
+const minLonSector = parseFloat(argv[1]) || -1
+const maxLatSector = parseFloat(argv[2]) || 1
+const maxLonSector = parseFloat(argv[3]) || 1
+const SCALE = parseFloat(argv[4]) || 1
+const PAD = parseFloat(argv[5]) || 0.0001
 
-const minLatSector = -8
-const minLonSector = -8
-const maxLatSector = 8
-const maxLonSector = 8
+const SIZE = 0.02197265625 * SCALE
+
+const command = `yarn sectorsCreator ${minLatSector} ${minLonSector} ${maxLatSector} ${maxLonSector} ${SCALE} ${PAD}`
 
 // ====================
 
@@ -104,7 +107,7 @@ const resWays = renderWays(sectors)
 
 const map = `
 <?xml version="1.0" encoding="UTF-8"?>
-<osm version="0.6" generator="some node script">
+<osm version="0.6" generator="${command}">
 ${resBounds}
 ${resNodes}
 ${resWays}
