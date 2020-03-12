@@ -6,6 +6,9 @@ export const middle = (valA: number, valB: number): number => {
   return valA > valB ? valB + half : valA + half
 }
 
+export const limit = (val: number, min = 0, max = 1): number =>
+  val < min ? min : val > max ? max : val
+
 /**
  * Limits the number of digits "after comma"
  */

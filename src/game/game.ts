@@ -1,12 +1,14 @@
-import { Renderer } from './renderer'
-import { TerrainController } from './terrain/terrainController'
-import { parseOSMXml } from './map/osmXmlParser'
-import { MapController } from './map/mapController'
 import { Vector2 } from '@babylonjs/core'
-import { MapWay } from './map/ways/ways'
-import { MapSectorBottom } from './map/mapSector'
+
 import { measureFrom, measureTo } from '../utils/benchmark'
 import { decimal } from '../utils/numbers'
+
+import { parseOSMXml } from './map/osmXmlParser'
+import { MapController, isPolygon } from './map/mapController'
+import { MapWay } from './map/ways/ways'
+import { MapSectorBottom } from './map/mapSector'
+import { Renderer } from './renderer'
+import { TerrainController } from './terrain/terrainController'
 
 const renderer = new Renderer()
 
@@ -32,19 +34,20 @@ fetch((document.location.search.slice(1) || 'pogonKosciol') + '.osm')
   .then(data => data.text())
   .then(parseOSMXml)
   .then(function pushDataToMapController(mapData) {
+    window['mapData'] = mapData
     mapController.addNewData(mapData)
     playerPosition.set(mapData.bounds.centerLat, mapData.bounds.centerLon)
     return mapData
   })
   .then(function handleMapData(mapData) {
-    measureFrom('getNeighborsForCoords')
+    measureFrom('getNeighborsByCoords')
     // TODO: This methods picks stuff only from the most bottom sectors
     // TODO: I'm missing ways placed in upper levels!
-    const allNeighbors = mapController.getNeighborsForCoords(
+    const allNeighbors = mapController.getNeighborsByCoords(
       playerPosition.x,
       playerPosition.y
     )
-    measureTo('getNeighborsForCoords')
+    measureTo('getNeighborsByCoords')
     const [targetSector] = allNeighbors
 
     // Expand sector selection to grab all nodes of ways,
@@ -90,15 +93,10 @@ fetch((document.location.search.slice(1) || 'pogonKosciol') + '.osm')
 
     // 2. For each way, place it whole in 3D space
     allNeighbors.forEach(sector => {
-      const isTargetSector = sector === targetSector
-
       renderer.debugSector(sector)
 
       sector.ways.forEach(way => {
-        way.renderedRef = renderer.addPolygonWay(
-          way,
-          isTargetSector ? 'building' : 'terrain' + sector.idx
-        )
+        way.renderedRef = renderer.addWay(way, sector)
       })
     })
 

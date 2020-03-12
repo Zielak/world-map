@@ -36,29 +36,14 @@ class MapController {
   }
 
   addNewData(data: ParsedMapData) {
-    data.nodesMap?.forEach(this.addNode, this)
-    data.waysMap?.forEach(this.addWay, this)
-  }
-
-  addNode(node: MapNode) {
-    const { sectors } = this
-
-    this.nodes.set(node.id, node)
-    sectors.addNode(node)
-  }
-
-  addWay(way: MapWay) {
-    // console.debug('addWay')
-    if (isPolygon(way)) {
-      this.addPolygonWay(way)
-    }
-  }
-
-  addPolygonWay(way: MapWay) {
-    // Construct a polygon out of given nodes.
-    const { sectors } = this
-
-    sectors.addWay(way)
+    const { nodes, sectors } = this
+    data.nodesMap?.forEach(function addNode(node: MapNode) {
+      nodes.set(node.id, node)
+      sectors.addNode(node)
+    })
+    data.waysMap?.forEach(function addWay(way: MapWay) {
+      sectors.addWay(way)
+    })
   }
 
   /**
@@ -66,7 +51,7 @@ class MapController {
    * @param lat
    * @param lon
    */
-  getNeighborsForCoords(lat: number, lon: number): MapSectorBottom[] {
+  getNeighborsByCoords(lat: number, lon: number): MapSectorBottom[] {
     const { sectors } = this
     const d = LEVELS[LEVELS.length - 1]
 

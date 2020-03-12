@@ -18,9 +18,12 @@ import { decimal } from '../utils/numbers'
 
 import { MapNode } from './map/nodes/nodes'
 import { MapWay } from './map/ways/ways'
+import { isRoad } from './map/ways/road'
 import { determineBuildingHeight } from './map/ways/buildingShape'
 import { buildingStillExists } from './map/ways/building'
 import { MapSectorBottom } from './map/mapSector'
+import { isPolygon } from './map/mapController'
+import { getRoadsLineColor } from './map/ways/road'
 
 class Renderer {
   canvas: HTMLCanvasElement
@@ -195,6 +198,32 @@ class Renderer {
 
       node.renderedRef = nodeBox
     }
+  }
+
+  addWay(way: MapWay, sector: MapSectorBottom) {
+    return isPolygon(way)
+      ? this.addPolygonWay(way, 'terrain' + sector.idx)
+      : this.addLineWay(way)
+  }
+
+  addLineWay(way: MapWay) {
+    const points = way.nodes.map(node => {
+      const { x, z } = node.relativePosition.add(node.sector.position)
+
+      const v = new Vector3(x, 0, z)
+
+      return v
+    })
+    const lines = MeshBuilder.CreateLines(
+      'way' + way.id,
+      { points },
+      this.scene
+    )
+    if (isRoad(way)) {
+      lines.color = getRoadsLineColor(way)
+    }
+
+    return lines
   }
 
   addPolygonWay(way: MapWay, materialID: string = 'building') {

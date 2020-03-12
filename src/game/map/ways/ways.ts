@@ -46,11 +46,16 @@ const tagsWhitelist = [
   'amenity',
   // 'barrier',
   // 'landuse',
-  // 'surface'
+  'junction',
+  'turn:lanes',
+  'lanes',
+  'lit',
+  'surface',
   'waterway',
+  'width',
   'test'
 ]
-const tagsValuesBlacklist = new Map([['highway', ['footway']]])
+const tagsValuesBlacklist = new Map([['highway', ['bus_stop', 'footway']]])
 
 const filterWhitelistedTags = (tag: OSMTag): boolean => {
   return tagsWhitelist.includes(tag.$_k)
