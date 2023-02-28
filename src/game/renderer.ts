@@ -156,7 +156,7 @@ class Renderer {
   debugSector(sector: MapSectorBottom) {
     const { minLat, minLon, maxLat, maxLon } = sector.bounds
     const convert = ({ east, north }) => ({ x: east, y: north })
-    const PAD = 0.0001
+    const PAD = 0.0000001
     const points = [
       convert(sector.geoConv.geodetic2Enu(minLat + PAD, minLon + PAD, 0)),
       convert(sector.geoConv.geodetic2Enu(minLat + PAD, maxLon - PAD, 0)),
